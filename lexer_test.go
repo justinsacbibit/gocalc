@@ -86,6 +86,36 @@ func TestLexRightParen(t *testing.T) {
 	checkType(to, tokenRightParen, t)
 }
 
+func TestLexNumberWithSurroundingParentheses(t *testing.T) {
+	s := "(5)"
+	l := newLexer(s)
+	to := l.token()
+
+	checkType(to, tokenLeftParen, t)
+
+	to = l.token()
+	checkType(to, tokenNumber, t)
+	checkVal(to, "5", t)
+
+	to = l.token()
+	checkType(to, tokenRightParen, t)
+}
+
+func TestLexComplex(t *testing.T) {
+	s := "5 - (10 - 5)"
+	l := newLexer(s)
+	eTypes := []tokenType{tokenNumber, tokenMinus, tokenLeftParen, tokenNumber, tokenMinus, tokenNumber, tokenRightParen}
+	eVals := []string{"5", "-", "(", "10", "-", "5", ")"}
+
+	for i, eType := range eTypes {
+		eVal := eVals[i]
+		to := l.token()
+
+		checkType(to, eType, t)
+		checkVal(to, eVal, t)
+	}
+}
+
 func checkVal(to token, exp string, t *testing.T) {
 	if to.val != exp {
 		t.Errorf("Wrong token value: %s", to.val)
