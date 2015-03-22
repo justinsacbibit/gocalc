@@ -13,6 +13,9 @@ func TestLexDigit(t *testing.T) {
 
 	checkType(to, tokenNumber, t)
 	checkVal(to, s, t)
+
+	to = l.token()
+	checkType(to, tokenEOF, t)
 }
 
 func TestLexMultiDigit(t *testing.T) {
@@ -116,6 +119,17 @@ func TestLexComplex(t *testing.T) {
 	}
 }
 
+func TestLexIdentifier(t *testing.T) {
+	s := "x"
+	l := newLexer(s)
+	to := l.token()
+
+	checkType(to, tokenIdentifier, t)
+	checkVal(to, s, t)
+
+	checkEof(l, t)
+}
+
 func checkVal(to token, exp string, t *testing.T) {
 	if to.val != exp {
 		t.Errorf("Wrong token value: %s", to.val)
@@ -124,7 +138,14 @@ func checkVal(to token, exp string, t *testing.T) {
 
 func checkType(to token, exp tokenType, t *testing.T) {
 	if to.typ != exp {
-		t.Errorf("Wrong token type: %d", to.typ)
+		t.Errorf("Wrong token type: %d, expected: %d", to.typ, exp)
+	}
+}
+
+func checkEof(l lexer, t *testing.T) {
+	to := l.token()
+	if to.typ != tokenEOF {
+		t.Errorf("Token is not EOF: %d", to.typ)
 	}
 }
 

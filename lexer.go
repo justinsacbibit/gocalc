@@ -85,13 +85,14 @@ func (l *gocalcLexer) emit(t tokenType) {
 
 func initialState(l *gocalcLexer) stateFn {
 	for {
-		switch r := l.next(); {
+		r := l.next()
+		switch {
 		case r == eof:
-			break
+			l.emit(tokenEOF)
+			return nil
 		case r == ' ':
 			l.ignore()
 		case r >= '0' && r <= '9':
-			l.backup()
 			return lexNumber
 		case r == '+':
 			l.emit(tokenPlus)
@@ -101,9 +102,10 @@ func initialState(l *gocalcLexer) stateFn {
 			l.emit(tokenLeftParen)
 		case r == ')':
 			l.emit(tokenRightParen)
-			//		case (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z'):
+		case (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z'):
+			return lexIdentifier
 		default:
-			return l.errorf("Invalid token: %q", r)
+			return l.errorf("Invalid token: %d", r)
 		}
 	}
 
@@ -114,10 +116,17 @@ func initialState(l *gocalcLexer) stateFn {
 func lexNumber(l *gocalcLexer) stateFn {
 	digits := "0123456789"
 	l.acceptRun(digits)
-	if r := l.peek(); r == '_' || (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
+	if r := l.peek(); (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
 		return l.errorf("bad number syntax: %q", l.input[l.start:l.pos])
 	}
 	l.emit(tokenNumber)
+	return initialState
+}
+
+func lexIdentifier(l *gocalcLexer) stateFn {
+	alpha := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	l.acceptRun(alpha)
+	l.emit(tokenIdentifier)
 	return initialState
 }
 
@@ -158,7 +167,7 @@ func (l *gocalcLexer) ignore() {
 }
 
 func (l *gocalcLexer) next() rune {
-	if l.pos > len(l.input) {
+	if l.pos >= len(l.input) {
 		l.width = 0
 		return eof
 	}
