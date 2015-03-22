@@ -1,12 +1,16 @@
 package gocalc
 
 import (
-	_ "fmt"
+	"fmt"
 	"testing"
 )
 
 func TestParseNumber(t *testing.T) {
-	p := newParser("5 + 5 + 5")
+	p := newParser("+5-(5+5)")
 	e := p.parseExpr()
-	print(e)
+	if e != nil {
+		print(e)
+	} else {
+		fmt.Println(p.error)
+	}
 }

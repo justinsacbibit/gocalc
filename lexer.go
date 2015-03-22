@@ -10,6 +10,7 @@ import (
 
 type lexer interface {
 	token() token
+	peekToken() token
 }
 
 func newLexer(input string) lexer {
@@ -17,11 +18,17 @@ func newLexer(input string) lexer {
 		input:  input,
 		state:  initialState,
 		tokens: make(chan token, 2),
+		peeked: nil,
 	}
 }
 
 func (l *gocalcLexer) token() token {
 	for {
+		if l.peeked != nil {
+			peeked := *l.peeked
+			l.peeked = nil
+			return peeked
+		}
 		select {
 		case item := <-l.tokens:
 			return item
@@ -30,6 +37,12 @@ func (l *gocalcLexer) token() token {
 		}
 	}
 	panic("not reached")
+}
+
+func (l *gocalcLexer) peekToken() token {
+	peeked := l.token()
+	l.peeked = &peeked
+	return peeked
 }
 
 type tokenType int
@@ -76,6 +89,7 @@ type gocalcLexer struct {
 	width  int
 	tokens chan token
 	state  stateFn
+	peeked *token
 }
 
 func (l *gocalcLexer) emit(t tokenType) {

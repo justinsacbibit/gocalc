@@ -16,6 +16,11 @@ type literal struct {
 	val string
 }
 
+type unaryExpr struct {
+	expr expr
+	op   token
+}
+
 type binaryExpr struct {
 	left  expr
 	right expr
@@ -44,6 +49,17 @@ func (lit *literal) print(indent int) {
 	fmt.Print("*literal {\n")
 	printIndent(indent + 1)
 	fmt.Printf("val: \"%s\"\n", lit.val)
+	printIndent(indent)
+	fmt.Print("}\n")
+}
+
+func (expr *unaryExpr) print(indent int) {
+	fmt.Print("*unaryExpr {\n")
+	printIndent(indent + 1)
+	fmt.Printf("op: %s\n", expr.op.val)
+	printIndent(indent + 1)
+	fmt.Print("expr: ")
+	expr.expr.print(indent + 1)
 	printIndent(indent)
 	fmt.Print("}\n")
 }
