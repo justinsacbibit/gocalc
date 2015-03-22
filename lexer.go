@@ -37,10 +37,13 @@ type tokenType int
 const (
 	tokenError tokenType = iota
 	tokenEOF
+
 	tokenIdentifier
+	tokenNumber
+
 	tokenLeftParen
 	tokenRightParen
-	tokenNumber
+
 	tokenPlus
 	tokenMinus
 )
