@@ -15,33 +15,27 @@ type parser struct {
 }
 
 func (p *parser) parseExpr() expr {
-	return p.parse(p.lexer.token(), 0)
+	return p.parse(p.parsePrimary(), 0)
 }
 
-func (p *parser) parse(lhs token, minPrecedence int) expr {
-	var root expr
+func (p *parser) parsePrimary() node {
+	token := p.lexer.token()
+	return &literal{
+		val: token.val,
+	}
+}
+
+func (p *parser) parse(lhs expr, minPrecedence int) expr {
 	lookahead := p.lexer.token()
 	for lookahead.typ == tokenPlus || lookahead.typ == tokenMinus {
 		op := lookahead
-		rhs := p.lexer.token()
+		rhs := p.parsePrimary()
 		lookahead = p.lexer.token()
-		binExpr := &binaryExpr{
-			left: &literal{
-				lhs.val,
-			},
-			right: &literal{
-				rhs.val,
-			},
-			op: op,
-		}
-		if root == nil {
-			root = binExpr
+		lhs = &binaryExpr{
+			left:  lhs,
+			right: rhs,
+			op:    op,
 		}
 	}
-	if root == nil && lhs.typ != tokenEOF {
-		root = &literal{
-			val: lhs.val,
-		}
-	}
-	return root
+	return lhs
 }

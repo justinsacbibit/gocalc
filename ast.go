@@ -24,7 +24,11 @@ type binaryExpr struct {
 }
 
 func print(node node) {
-	node.print(0)
+	if node == nil {
+		fmt.Println("nil")
+	} else {
+		node.print(0)
+	}
 }
 
 var indentStr = ".   "
