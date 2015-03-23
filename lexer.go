@@ -59,6 +59,9 @@ const (
 
 	tokenPlus
 	tokenMinus
+
+	tokenStar
+	tokenSlash
 )
 
 type token struct {
@@ -115,6 +118,10 @@ func initialState(l *gocalcLexer) stateFn {
 			l.emit(tokenPlus)
 		case r == '-':
 			l.emit(tokenMinus)
+		case r == '*':
+			l.emit(tokenStar)
+		case r == '/':
+			l.emit(tokenSlash)
 		case r == '(':
 			l.emit(tokenLeftParen)
 		case r == ')':

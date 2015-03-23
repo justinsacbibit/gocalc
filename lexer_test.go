@@ -119,6 +119,33 @@ func TestLexComplex(t *testing.T) {
 	}
 }
 
+func TestLexStar(t *testing.T) {
+	s := "*"
+	l := newLexer(s)
+	to := l.token()
+
+	checkType(to, tokenStar, t)
+}
+
+func TestLexSlash(t *testing.T) {
+	s := "/"
+	l := newLexer(s)
+	to := l.token()
+
+	checkType(to, tokenSlash, t)
+}
+
+func TestLexStarAndSlash(t *testing.T) {
+	s := "5*1/2"
+	l := newLexer(s)
+
+	eTypes := []tokenType{tokenNumber, tokenStar, tokenNumber, tokenSlash, tokenNumber}
+	for _, eType := range eTypes {
+		to := l.token()
+		checkType(to, eType, t)
+	}
+}
+
 func TestLexIdentifier(t *testing.T) {
 	s := "x"
 	l := newLexer(s)
