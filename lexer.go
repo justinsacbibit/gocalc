@@ -61,48 +61,6 @@ func (l *gocalcLexer) peekToken() *token {
 	panic("peek failed")
 }
 
-type tokenType int
-
-const (
-	tokenError tokenType = iota
-	tokenEOF
-
-	tokenIdentifier
-	tokenNumber
-
-	tokenComma
-
-	tokenLeftParen
-	tokenRightParen
-
-	tokenBinaryOp
-
-	tokenAdditive
-
-	tokenPlus
-	tokenMinus
-
-	tokenMultiplicative
-
-	tokenStar
-	tokenSlash
-)
-
-type token struct {
-	typ tokenType
-	val string
-}
-
-func (t token) String() string {
-	switch t.typ {
-	case tokenEOF:
-		return "EOF"
-	case tokenError:
-		return t.val
-	}
-	return fmt.Sprintf("%s", t.val)
-}
-
 // mark: Internal use
 
 const eof = -1

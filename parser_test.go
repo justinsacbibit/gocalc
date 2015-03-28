@@ -8,7 +8,7 @@ import (
 func shouldParse(s string, t *testing.T) {
 	p := newParser(s)
 	if e := p.parseExpr(); e == nil {
-		t.Fatalf("Parse of \"%s\" failed: %s", p.error)
+		t.Fatalf("Parse of \"%s\" failed: %s", s, p.error)
 	}
 }
 
@@ -48,7 +48,7 @@ func TestParseFunctionMultipleArguments(t *testing.T) {
 }
 
 func TestParse(t *testing.T) {
-	p := newParser("abs(-3)")
+	p := newParser("-abs(-3)")
 	e := p.parseExpr()
 	if e != nil {
 		print(e)

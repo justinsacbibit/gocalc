@@ -14,40 +14,39 @@ type parser struct {
 }
 
 func (p *parser) parseExpr() expr {
-	// all expressions start with a primary
-	primary := p.parsePrimary()
-	if primary == nil {
+	e := p.parse(0)
+	if e == nil {
+		return nil
+	} else if next := p.lexer.token(); next == nil || next.typ != tokenEOF {
+		p.error = fmt.Sprintf("Expected EOF, got %s", next)
 		return nil
 	}
-	return p.parse(primary, 0)
+	return e
 }
 
 func (p *parser) parsePrimary() expr {
 	token := p.lexer.token()
 
 	switch token.typ {
+	case tokenMinus:
+		return &unaryExpr{
+			expr: p.parse(precedence(token, unary)),
+			op:   token,
+		}
+	case tokenLeftParen:
+		e := p.parse(0)
+		token = p.lexer.token()
+		if token.typ != tokenRightParen {
+			p.error = fmt.Sprintln("Unclosed parenth")
+			return nil
+		}
+		return e
 	case tokenNumber:
 		// NUMBER
 		return &literal{token.val}
 	case tokenIdentifier:
 		// IDENTIFIER | IDENTIFIER '(' args ')'
 		return p.parseIdentifier(token)
-	case tokenLeftParen:
-		// '(' expression ')'
-		e := p.parseExpr()
-		token = p.lexer.token()
-		if token.typ != tokenRightParen {
-			p.error = fmt.Sprintln("Unclosed parenth")
-			return nil
-		}
-
-		return e
-	case tokenMinus, tokenPlus:
-		// ( '+' | '-' ) * primary
-		return &unaryExpr{
-			expr: p.parseExpr(),
-			op:   token,
-		}
 	default:
 		p.error = fmt.Sprintf("Expected primary, got \"%s\"", token)
 		return nil
@@ -64,7 +63,7 @@ func (p *parser) parseFunctionArgs() []expr {
 	}
 
 	for {
-		arg := p.parseExpr()
+		arg := p.parse(0)
 		if arg == nil {
 			return nil
 		}
@@ -100,42 +99,64 @@ func (p *parser) parseIdentifier(token *token) expr {
 	}
 }
 
-func (p *parser) parse(lhs expr, minPrecedence int) expr {
+func (p *parser) parse(prec int) expr {
+	e := p.parsePrimary()
+	if e == nil {
+		return nil
+	}
 	lookahead := p.lexer.peekToken()
-	opPrecedence := precedence(lookahead)
-	for binaryOp(lookahead) && opPrecedence >= minPrecedence {
+	for binaryOp(lookahead) && precedence(lookahead, binary) >= prec {
 		op := lookahead
-		p.lexer.token()
-		rhs := p.parsePrimary()
-		if rhs == nil {
-			return nil
-		}
-		lookahead = p.lexer.peekToken()
-		lookaheadPrecedence := precedence(lookahead)
-		for binaryOp(lookahead) && lookaheadPrecedence > opPrecedence {
-			rhs = p.parse(rhs, lookaheadPrecedence)
-			lookahead = p.lexer.peekToken()
-		}
-		lhs = &binaryExpr{
-			left:  lhs,
-			right: rhs,
+		p.consume()
+		q := 1 + precedence(lookahead, binary)
+		r := p.parse(q)
+		e = &binaryExpr{
+			left:  e,
+			right: r,
 			op:    op,
 		}
+
+		lookahead = p.lexer.peekToken()
 	}
-	return lhs
+	return e
 }
 
-func binaryOp(lookahead *token) bool {
-	return lookahead.typ > tokenBinaryOp
+func (p *parser) consume() {
+	p.lexer.token()
 }
 
-func precedence(lookahead *token) int {
-	switch {
-	case lookahead.typ > tokenMultiplicative:
-		return 2
-	case lookahead.typ > tokenAdditive:
-		return 1
+func binaryOp(token *token) bool {
+	switch token.typ {
+	case tokenPlus, tokenMinus, tokenStar, tokenSlash:
+		return true
 	default:
-		return -1
+		return false
 	}
+}
+
+type operatorType int
+
+const (
+	unary operatorType = iota
+	binary
+	ternary
+)
+
+func precedence(token *token, operatorType operatorType) int {
+	switch operatorType {
+	case unary:
+		switch token.typ {
+		case tokenMinus:
+			return 4
+		}
+	case binary:
+		switch token.typ {
+		case tokenPlus, tokenMinus:
+			return 3
+		case tokenStar, tokenSlash:
+			return 5
+		}
+	}
+
+	panic("unsupported operator")
 }
