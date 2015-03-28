@@ -73,6 +73,14 @@ func TestLexMinus(t *testing.T) {
 	checkType(to, tokenMinus, t)
 }
 
+func TextLexComma(t *testing.T) {
+	s := ","
+	l := newLexer(s)
+	to := l.token()
+
+	checkType(to, tokenComma, t)
+}
+
 func TestLexLeftParen(t *testing.T) {
 	s := "("
 	l := newLexer(s)
@@ -157,13 +165,28 @@ func TestLexIdentifier(t *testing.T) {
 	checkEof(l, t)
 }
 
-func checkVal(to token, exp string, t *testing.T) {
+func TestLexFunc(t *testing.T) {
+	s := "f(x)"
+	l := newLexer(s)
+	eTypes := []tokenType{tokenIdentifier, tokenLeftParen, tokenIdentifier, tokenRightParen}
+	eVals := []string{"f", "(", "x", ")"}
+
+	for i, eType := range eTypes {
+		eVal := eVals[i]
+		to := l.token()
+		checkType(to, eType, t)
+		checkVal(to, eVal, t)
+	}
+	checkEof(l, t)
+}
+
+func checkVal(to *token, exp string, t *testing.T) {
 	if to.val != exp {
 		t.Errorf("Wrong token value: %s", to.val)
 	}
 }
 
-func checkType(to token, exp tokenType, t *testing.T) {
+func checkType(to *token, exp tokenType, t *testing.T) {
 	if to.typ != exp {
 		t.Errorf("Wrong token type: %d, expected: %d", to.typ, exp)
 	}

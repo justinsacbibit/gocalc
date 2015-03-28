@@ -1,38 +1,41 @@
 package gocalc
 
-import (
-	"fmt"
-)
-
-type node interface {
-	print(indent int)
-}
+import "fmt"
 
 type expr interface {
-	node
+	print(indent int)
 }
 
 type literal struct {
 	val string
 }
 
+type callExpr struct {
+	function string
+	args     []expr
+}
+
+type identifier struct {
+	val string
+}
+
 type unaryExpr struct {
 	expr expr
-	op   token
+	op   *token
 }
 
 type binaryExpr struct {
 	left  expr
 	right expr
 	//opPos int
-	op token
+	op *token
 }
 
-func print(node node) {
-	if node == nil {
+func print(expr expr) {
+	if expr == nil {
 		fmt.Println("nil")
 	} else {
-		node.print(0)
+		expr.print(0)
 	}
 }
 
@@ -49,6 +52,28 @@ func (lit *literal) print(indent int) {
 	fmt.Print("*literal {\n")
 	printIndent(indent + 1)
 	fmt.Printf("val: \"%s\"\n", lit.val)
+	printIndent(indent)
+	fmt.Print("}\n")
+}
+
+func (iden *identifier) print(indent int) {
+	fmt.Print("*identifier {\n")
+	printIndent(indent + 1)
+	fmt.Printf("val: \"%s\"\n", iden.val)
+	printIndent(indent)
+	fmt.Print("}\n")
+}
+
+func (expr *callExpr) print(indent int) {
+	fmt.Print("*callExpr {\n")
+	printIndent(indent + 1)
+	fmt.Printf("func: %s\n", expr.function)
+	printIndent(indent + 1)
+	fmt.Printf("args (len: %d):\n", len(expr.args))
+	for _, arg := range expr.args {
+		printIndent(indent + 1)
+		arg.print(indent + 1)
+	}
 	printIndent(indent)
 	fmt.Print("}\n")
 }

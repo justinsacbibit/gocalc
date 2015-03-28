@@ -9,40 +9,56 @@ import (
 // External use
 
 type lexer interface {
-	token() token
-	peekToken() token
+	token() *token
+	peekToken() *token
+}
+
+type queue []*token
+
+func (q *queue) push(t *token) {
+	*q = append(*q, t)
+}
+
+func (q *queue) pop() *token {
+	t := (*q)[0]
+	*q = (*q)[1:]
+	return t
+}
+
+func (q *queue) first() *token {
+	return (*q)[0]
 }
 
 func newLexer(input string) lexer {
 	return &gocalcLexer{
 		input:  input,
 		state:  initialState,
-		tokens: make(chan token, 2),
-		peeked: nil,
+		tokens: queue{},
 	}
 }
 
-func (l *gocalcLexer) token() token {
+func (l *gocalcLexer) token() *token {
 	for {
-		if l.peeked != nil {
-			peeked := *l.peeked
-			l.peeked = nil
-			return peeked
-		}
-		select {
-		case item := <-l.tokens:
-			return item
-		default:
+		switch len(l.tokens) {
+		case 0:
 			l.state = l.state(l)
+		default:
+			return l.tokens.pop()
 		}
 	}
 	panic("not reached")
 }
 
-func (l *gocalcLexer) peekToken() token {
-	peeked := l.token()
-	l.peeked = &peeked
-	return peeked
+func (l *gocalcLexer) peekToken() *token {
+	for {
+		switch len(l.tokens) {
+		case 0:
+			l.state = l.state(l)
+		default:
+			return l.tokens.first()
+		}
+	}
+	panic("peek failed")
 }
 
 type tokenType int
@@ -54,11 +70,19 @@ const (
 	tokenIdentifier
 	tokenNumber
 
+	tokenComma
+
 	tokenLeftParen
 	tokenRightParen
 
+	tokenBinaryOp
+
+	tokenAdditive
+
 	tokenPlus
 	tokenMinus
+
+	tokenMultiplicative
 
 	tokenStar
 	tokenSlash
@@ -90,16 +114,15 @@ type gocalcLexer struct {
 	start  int
 	pos    int
 	width  int
-	tokens chan token
+	tokens queue
 	state  stateFn
-	peeked *token
 }
 
 func (l *gocalcLexer) emit(t tokenType) {
-	l.tokens <- token{
+	l.tokens.push(&token{
 		typ: t,
 		val: l.input[l.start:l.pos],
-	}
+	})
 	l.start = l.pos
 }
 
@@ -122,6 +145,8 @@ func initialState(l *gocalcLexer) stateFn {
 			l.emit(tokenStar)
 		case r == '/':
 			l.emit(tokenSlash)
+		case r == ',':
+			l.emit(tokenComma)
 		case r == '(':
 			l.emit(tokenLeftParen)
 		case r == ')':
@@ -155,10 +180,10 @@ func lexIdentifier(l *gocalcLexer) stateFn {
 }
 
 func (l *gocalcLexer) errorf(format string, args ...interface{}) stateFn {
-	l.tokens <- token{
+	l.tokens.push(&token{
 		tokenError,
 		fmt.Sprintf(format, args...),
-	}
+	})
 	return nil
 }
 
