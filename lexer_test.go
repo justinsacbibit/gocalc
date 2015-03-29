@@ -2,33 +2,6 @@ package gocalc
 
 import "testing"
 
-func shouldLex(s string, ts []tokenType, v *[]string, t *testing.T) {
-	l := newLexer(s)
-	for i, e := range ts {
-		to := l.token()
-		if to.typ != e {
-			t.Errorf("Wrong token type: expected %s, got %s", e, to.typ)
-		}
-		if v != nil {
-			ev := (*v)[i]
-			if ev != "" && to.val != ev {
-				t.Errorf("Wrong token value: expected %s, got %s", ev, to.val)
-			}
-		}
-	}
-	if typ := l.token().typ; typ != tokenEOF {
-		t.Errorf("Expected EOF, got %s", typ)
-	}
-}
-
-func types(args ...tokenType) []tokenType {
-	return args
-}
-
-func vals(args ...string) *[]string {
-	return &args
-}
-
 func TestLexDigit(t *testing.T) {
 	s := "1"
 	shouldLex(s, types(tokenNumber), vals(s), t)
@@ -114,4 +87,89 @@ func TestLexFunc(t *testing.T) {
 		types(tokenIdentifier, tokenLeftParen, tokenIdentifier, tokenRightParen),
 		vals("f", "", "x", ""),
 		t)
+}
+
+func TestLexPercent(t *testing.T) {
+	shouldLex("%", types(tokenPercent), nil, t)
+}
+
+func TestLexLeftShift(t *testing.T) {
+	shouldLex("<<", types(tokenLeftShift), nil, t)
+}
+
+func TestLexRightShift(t *testing.T) {
+	shouldLex(">>", types(tokenRightShift), nil, t)
+}
+
+func TestLexLessThan(t *testing.T) {
+	shouldLex("<", types(tokenLessThan), nil, t)
+}
+
+func TestLexLessOrEqual(t *testing.T) {
+	shouldLex("<=", types(tokenLessOrEqual), nil, t)
+}
+
+func TestLexGreaterThan(t *testing.T) {
+	shouldLex(">", types(tokenGreaterThan), nil, t)
+}
+
+func TestLexGreaterOrEqual(t *testing.T) {
+	shouldLex(">=", types(tokenGreaterOrEqual), nil, t)
+}
+
+func TestLexEqual(t *testing.T) {
+	shouldLex("=", types(tokenEqual), nil, t)
+}
+
+func TestLexNotEqual(t *testing.T) {
+	shouldLex("!=", types(tokenNotEqual), nil, t)
+}
+
+func TestLexBitwiseAnd(t *testing.T) {
+	shouldLex("&", types(tokenBitwiseAnd), nil, t)
+}
+
+func TestLexBitwiseXor(t *testing.T) {
+	shouldLex("^", types(tokenBitwiseXor), nil, t)
+}
+
+func TestLexBitwiseOr(t *testing.T) {
+	shouldLex("|", types(tokenBitwiseOr), nil, t)
+}
+
+func TestLexLogicalAnd(t *testing.T) {
+	shouldLex("&&", types(tokenLogicalAnd), nil, t)
+}
+
+func TestLexLogicalOr(t *testing.T) {
+	shouldLex("||", types(tokenLogicalOr), nil, t)
+}
+
+// Helpers
+
+func shouldLex(s string, ts []tokenType, v *[]string, t *testing.T) {
+	l := newLexer(s)
+	for i, e := range ts {
+		to := l.token()
+		if to.typ != e {
+			t.Errorf("Wrong token type: expected %s, got %s", e, to.typ)
+		}
+		if v != nil {
+			ev := (*v)[i]
+			if ev != "" && to.val != ev {
+				t.Errorf("Wrong token value: expected %s, got %s", ev, to.val)
+			}
+		}
+	}
+	if typ := l.token().typ; typ != tokenEOF {
+		t.Errorf("Expected EOF, got %s", typ)
+	}
+}
+
+func types(args ...tokenType) []tokenType {
+	return args
+}
+
+func vals(args ...string) *[]string {
+	return &args
 }

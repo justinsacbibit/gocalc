@@ -11,6 +11,8 @@ func newLexer(input string) *gocalcLexer {
 		input:  input,
 		state:  initialState,
 		tokens: queue{},
+		alpha:  "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+		digits: "0123456789",
 	}
 }
 
@@ -35,7 +37,7 @@ func (l *gocalcLexer) peekToken() *token {
 			return l.tokens.first()
 		}
 	}
-	panic("peek failed")
+	panic("not reached")
 }
 
 // mark: Internal use
@@ -51,6 +53,8 @@ type gocalcLexer struct {
 	width  int
 	tokens queue
 	state  stateFn
+	digits string
+	alpha  string
 }
 
 func (l *gocalcLexer) emit(t tokenType) {
@@ -70,24 +74,42 @@ func initialState(l *gocalcLexer) stateFn {
 			return nil
 		case r == ' ':
 			l.ignore()
+		case (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z'):
+			return lexIdentifier
 		case r >= '0' && r <= '9':
 			return lexNumber
-		case r == '+':
-			l.emit(tokenPlus)
-		case r == '-':
-			l.emit(tokenMinus)
-		case r == '*':
-			l.emit(tokenStar)
-		case r == '/':
-			l.emit(tokenSlash)
-		case r == ',':
-			l.emit(tokenComma)
 		case r == '(':
 			l.emit(tokenLeftParen)
 		case r == ')':
 			l.emit(tokenRightParen)
-		case (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z'):
-			return lexIdentifier
+		case r == ',':
+			l.emit(tokenComma)
+		case r == '!':
+			return lexExclamation
+		case r == '~':
+			l.emit(tokenBitwiseNot)
+		case r == '*':
+			l.emit(tokenStar)
+		case r == '/':
+			l.emit(tokenSlash)
+		case r == '%':
+			l.emit(tokenPercent)
+		case r == '+':
+			l.emit(tokenPlus)
+		case r == '-':
+			l.emit(tokenMinus)
+		case r == '<':
+			return lexLessThan
+		case r == '>':
+			return lexGreaterThan
+		case r == '=':
+			l.emit(tokenEqual)
+		case r == '&':
+			return lexAnd
+		case r == '^':
+			l.emit(tokenBitwiseXor)
+		case r == '|':
+			return lexOr
 		default:
 			return l.errorf("Invalid token: %c", r)
 		}
@@ -97,9 +119,59 @@ func initialState(l *gocalcLexer) stateFn {
 	return nil
 }
 
+func (l *gocalcLexer) checkNext(next rune, match tokenType, otherwise tokenType) stateFn {
+	if l.next() == next {
+		l.emit(match)
+	} else {
+		l.backup()
+		l.emit(otherwise)
+	}
+
+	return initialState
+}
+
+func lexExclamation(l *gocalcLexer) stateFn {
+	return l.checkNext('=', tokenNotEqual, tokenLogicalNot)
+}
+
+func lexLessThan(l *gocalcLexer) stateFn {
+	switch l.next() {
+	case '=':
+		l.emit(tokenLessOrEqual)
+	case '<':
+		l.emit(tokenLeftShift)
+	default:
+		l.backup()
+		l.emit(tokenLessThan)
+	}
+
+	return initialState
+}
+
+func lexGreaterThan(l *gocalcLexer) stateFn {
+	switch l.next() {
+	case '=':
+		l.emit(tokenGreaterOrEqual)
+	case '>':
+		l.emit(tokenRightShift)
+	default:
+		l.backup()
+		l.emit(tokenGreaterThan)
+	}
+
+	return initialState
+}
+
+func lexAnd(l *gocalcLexer) stateFn {
+	return l.checkNext('&', tokenLogicalAnd, tokenBitwiseAnd)
+}
+
+func lexOr(l *gocalcLexer) stateFn {
+	return l.checkNext('|', tokenLogicalOr, tokenBitwiseOr)
+}
+
 func lexNumber(l *gocalcLexer) stateFn {
-	digits := "0123456789"
-	l.acceptRun(digits)
+	l.acceptRun(l.digits)
 	if r := l.peek(); (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
 		return l.errorf("bad number syntax: %q", l.input[l.start:l.pos])
 	}
@@ -108,8 +180,7 @@ func lexNumber(l *gocalcLexer) stateFn {
 }
 
 func lexIdentifier(l *gocalcLexer) stateFn {
-	alpha := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	l.acceptRun(alpha)
+	l.acceptRun(l.alpha)
 	l.emit(tokenIdentifier)
 	return initialState
 }

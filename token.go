@@ -11,16 +11,41 @@ const (
 	tokenIdentifier
 	tokenNumber
 
-	tokenComma
-
 	tokenLeftParen
 	tokenRightParen
+
+	tokenComma
+
+	tokenLogicalNot
+	tokenBitwiseNot
+
+	tokenStar
+	tokenSlash
+	tokenPercent
 
 	tokenPlus
 	tokenMinus
 
-	tokenStar
-	tokenSlash
+	tokenLeftShift
+	tokenRightShift
+
+	tokenLessThan
+	tokenLessOrEqual
+	tokenGreaterThan
+	tokenGreaterOrEqual
+
+	tokenEqual
+	tokenNotEqual
+
+	tokenBitwiseAnd
+
+	tokenBitwiseXor
+
+	tokenBitwiseOr
+
+	tokenLogicalAnd
+
+	tokenLogicalOr
 )
 
 type token struct {
