@@ -9,7 +9,7 @@ func newParser(expr string) *parser {
 }
 
 type parser struct {
-	lexer lexer
+	lexer *gocalcLexer
 	error string
 }
 
@@ -18,7 +18,7 @@ func (p *parser) parseExpr() expr {
 	if e == nil {
 		return nil
 	} else if next := p.lexer.token(); next == nil || next.typ != tokenEOF {
-		p.error = fmt.Sprintf("Expected EOF, got %s", next)
+		p.error = fmt.Sprintf("parseExpr(): Expected EOF, got %s", next)
 		return nil
 	}
 	return e

@@ -48,7 +48,7 @@ func TestParseFunctionMultipleArguments(t *testing.T) {
 }
 
 func TestParse(t *testing.T) {
-	p := newParser("-abs(-3)")
+	p := newParser("a () + b * c ()* d + e ()+ f / g ()/ (h + i)")
 	e := p.parseExpr()
 	if e != nil {
 		print(e)

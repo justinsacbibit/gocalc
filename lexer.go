@@ -6,30 +6,7 @@ import (
 	"unicode/utf8"
 )
 
-// External use
-
-type lexer interface {
-	token() *token
-	peekToken() *token
-}
-
-type queue []*token
-
-func (q *queue) push(t *token) {
-	*q = append(*q, t)
-}
-
-func (q *queue) pop() *token {
-	t := (*q)[0]
-	*q = (*q)[1:]
-	return t
-}
-
-func (q *queue) first() *token {
-	return (*q)[0]
-}
-
-func newLexer(input string) lexer {
+func newLexer(input string) *gocalcLexer {
 	return &gocalcLexer{
 		input:  input,
 		state:  initialState,
@@ -112,7 +89,7 @@ func initialState(l *gocalcLexer) stateFn {
 		case (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z'):
 			return lexIdentifier
 		default:
-			return l.errorf("Invalid token: %d", r)
+			return l.errorf("Invalid token: %c", r)
 		}
 	}
 

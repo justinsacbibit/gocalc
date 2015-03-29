@@ -1,200 +1,117 @@
 package gocalc
 
-import (
-	_ "fmt"
-	"strings"
-	"testing"
-)
+import "testing"
+
+func shouldLex(s string, ts []tokenType, v *[]string, t *testing.T) {
+	l := newLexer(s)
+	for i, e := range ts {
+		to := l.token()
+		if to.typ != e {
+			t.Errorf("Wrong token type: expected %s, got %s", e, to.typ)
+		}
+		if v != nil {
+			ev := (*v)[i]
+			if ev != "" && to.val != ev {
+				t.Errorf("Wrong token value: expected %s, got %s", ev, to.val)
+			}
+		}
+	}
+	if typ := l.token().typ; typ != tokenEOF {
+		t.Errorf("Expected EOF, got %s", typ)
+	}
+}
+
+func types(args ...tokenType) []tokenType {
+	return args
+}
+
+func vals(args ...string) *[]string {
+	return &args
+}
 
 func TestLexDigit(t *testing.T) {
 	s := "1"
-	l := newLexer(s)
-	to := l.token()
-
-	checkType(to, tokenNumber, t)
-	checkVal(to, s, t)
-
-	to = l.token()
-	checkType(to, tokenEOF, t)
+	shouldLex(s, types(tokenNumber), vals(s), t)
 }
 
 func TestLexMultiDigit(t *testing.T) {
 	s := "111"
-	l := newLexer(s)
-	to := l.token()
-
-	checkType(to, tokenNumber, t)
-	checkVal(to, s, t)
+	shouldLex(s, types(tokenNumber), vals(s), t)
 }
 
 func TestLexMultipleNumbers(t *testing.T) {
 	s := "1 2 3"
-	l := newLexer(s)
-
-	strs := strings.Split(s, " ")
-	for _, str := range strs {
-		to := l.token()
-		checkType(to, tokenNumber, t)
-		checkVal(to, str, t)
-	}
+	shouldLex(s,
+		types(tokenNumber, tokenNumber, tokenNumber),
+		vals("1", "2", "3"),
+		t)
 }
 
 func TestLexNumberWithLeadingWhitespace(t *testing.T) {
-	s := "5"
-	l := newLexer("  " + s)
-	to := l.token()
-
-	checkType(to, tokenNumber, t)
-	checkVal(to, s, t)
+	shouldLex("  5", types(tokenNumber), vals("5"), t)
 }
 
 func TestLexNumberWithSurroundingWhitespace(t *testing.T) {
-	s := "99"
-	l := newLexer("  " + s + "  ")
-	to := l.token()
-
-	checkType(to, tokenNumber, t)
-	checkVal(to, s, t)
+	shouldLex("99", types(tokenNumber), vals("99"), t)
 }
 
 func TestLexPlus(t *testing.T) {
-	s := "+"
-	l := newLexer(s)
-	to := l.token()
-
-	checkType(to, tokenPlus, t)
+	shouldLex("+", types(tokenPlus), nil, t)
 }
 
 func TestLexMinus(t *testing.T) {
-	s := "-"
-	l := newLexer(s)
-	to := l.token()
-
-	checkType(to, tokenMinus, t)
+	shouldLex("-", types(tokenMinus), nil, t)
 }
 
 func TextLexComma(t *testing.T) {
-	s := ","
-	l := newLexer(s)
-	to := l.token()
-
-	checkType(to, tokenComma, t)
+	shouldLex(",", types(tokenComma), nil, t)
 }
 
 func TestLexLeftParen(t *testing.T) {
-	s := "("
-	l := newLexer(s)
-	to := l.token()
-
-	checkType(to, tokenLeftParen, t)
+	shouldLex("(", types(tokenLeftParen), nil, t)
 }
 
 func TestLexRightParen(t *testing.T) {
-	s := ")"
-	l := newLexer(s)
-	to := l.token()
-
-	checkType(to, tokenRightParen, t)
+	shouldLex(")", types(tokenRightParen), nil, t)
 }
 
 func TestLexNumberWithSurroundingParentheses(t *testing.T) {
-	s := "(5)"
-	l := newLexer(s)
-	to := l.token()
-
-	checkType(to, tokenLeftParen, t)
-
-	to = l.token()
-	checkType(to, tokenNumber, t)
-	checkVal(to, "5", t)
-
-	to = l.token()
-	checkType(to, tokenRightParen, t)
+	shouldLex("(5)",
+		types(tokenLeftParen, tokenNumber, tokenRightParen),
+		vals("", "5", ""),
+		t)
 }
 
 func TestLexComplex(t *testing.T) {
-	s := "5 - (10 - 5)"
-	l := newLexer(s)
-	eTypes := []tokenType{tokenNumber, tokenMinus, tokenLeftParen, tokenNumber, tokenMinus, tokenNumber, tokenRightParen}
-	eVals := []string{"5", "-", "(", "10", "-", "5", ")"}
-
-	for i, eType := range eTypes {
-		eVal := eVals[i]
-		to := l.token()
-
-		checkType(to, eType, t)
-		checkVal(to, eVal, t)
-	}
+	shouldLex("5 - (10 - 5)",
+		types(tokenNumber, tokenMinus, tokenLeftParen, tokenNumber, tokenMinus, tokenNumber, tokenRightParen),
+		vals("5", "", "", "10", "", "5", ""),
+		t)
 }
 
 func TestLexStar(t *testing.T) {
-	s := "*"
-	l := newLexer(s)
-	to := l.token()
-
-	checkType(to, tokenStar, t)
+	shouldLex("*", types(tokenStar), nil, t)
 }
 
 func TestLexSlash(t *testing.T) {
-	s := "/"
-	l := newLexer(s)
-	to := l.token()
-
-	checkType(to, tokenSlash, t)
+	shouldLex("/", types(tokenSlash), nil, t)
 }
 
 func TestLexStarAndSlash(t *testing.T) {
-	s := "5*1/2"
-	l := newLexer(s)
-
-	eTypes := []tokenType{tokenNumber, tokenStar, tokenNumber, tokenSlash, tokenNumber}
-	for _, eType := range eTypes {
-		to := l.token()
-		checkType(to, eType, t)
-	}
+	shouldLex("5*1/2",
+		types(tokenNumber, tokenStar, tokenNumber, tokenSlash, tokenNumber),
+		vals("5", "", "1", "", "2"),
+		t)
 }
 
 func TestLexIdentifier(t *testing.T) {
 	s := "x"
-	l := newLexer(s)
-	to := l.token()
-
-	checkType(to, tokenIdentifier, t)
-	checkVal(to, s, t)
-
-	checkEof(l, t)
+	shouldLex(s, types(tokenIdentifier), vals(s), t)
 }
 
 func TestLexFunc(t *testing.T) {
-	s := "f(x)"
-	l := newLexer(s)
-	eTypes := []tokenType{tokenIdentifier, tokenLeftParen, tokenIdentifier, tokenRightParen}
-	eVals := []string{"f", "(", "x", ")"}
-
-	for i, eType := range eTypes {
-		eVal := eVals[i]
-		to := l.token()
-		checkType(to, eType, t)
-		checkVal(to, eVal, t)
-	}
-	checkEof(l, t)
-}
-
-func checkVal(to *token, exp string, t *testing.T) {
-	if to.val != exp {
-		t.Errorf("Wrong token value: %s", to.val)
-	}
-}
-
-func checkType(to *token, exp tokenType, t *testing.T) {
-	if to.typ != exp {
-		t.Errorf("Wrong token type: %d, expected: %d", to.typ, exp)
-	}
-}
-
-func checkEof(l lexer, t *testing.T) {
-	to := l.token()
-	if to.typ != tokenEOF {
-		t.Errorf("Token is not EOF: %d", to.typ)
-	}
+	shouldLex("f(x)",
+		types(tokenIdentifier, tokenLeftParen, tokenIdentifier, tokenRightParen),
+		vals("f", "", "x", ""),
+		t)
 }
