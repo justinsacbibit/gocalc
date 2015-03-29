@@ -28,7 +28,7 @@ func (p *parser) parsePrimary() expr {
 	token := p.lexer.token()
 
 	switch token.typ {
-	case tokenMinus:
+	case tokenMinus, tokenPlus, tokenLogicalNot, tokenBitwiseNot:
 		return &unaryExpr{
 			expr: p.parse(precedence(token, unary)),
 			op:   token,
@@ -126,12 +126,7 @@ func (p *parser) consume() {
 }
 
 func binaryOp(token *token) bool {
-	switch token.typ {
-	case tokenPlus, tokenMinus, tokenStar, tokenSlash:
-		return true
-	default:
-		return false
-	}
+	return token.typ > tokenBinary
 }
 
 type operatorType int
@@ -139,22 +134,38 @@ type operatorType int
 const (
 	unary operatorType = iota
 	binary
-	ternary
+	// ternary
 )
 
 func precedence(token *token, operatorType operatorType) int {
 	switch operatorType {
 	case unary:
 		switch token.typ {
-		case tokenMinus:
-			return 4
+		case tokenMinus, tokenLogicalNot, tokenBitwiseNot:
+			return 10
 		}
 	case binary:
 		switch token.typ {
-		case tokenPlus, tokenMinus:
+		case tokenLogicalOr:
+			return 0
+		case tokenLogicalAnd:
+			return 1
+		case tokenBitwiseOr:
+			return 2
+		case tokenBitwiseXor:
 			return 3
-		case tokenStar, tokenSlash:
+		case tokenBitwiseAnd:
+			return 4
+		case tokenEqual, tokenNotEqual:
 			return 5
+		case tokenLessThan, tokenLessOrEqual, tokenGreaterThan, tokenGreaterOrEqual:
+			return 6
+		case tokenLeftShift, tokenRightShift:
+			return 7
+		case tokenPlus, tokenMinus:
+			return 8
+		case tokenStar, tokenSlash, tokenPercent:
+			return 9
 		}
 	}
 

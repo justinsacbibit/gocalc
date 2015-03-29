@@ -19,6 +19,8 @@ const (
 	tokenLogicalNot
 	tokenBitwiseNot
 
+	tokenBinary
+
 	tokenStar
 	tokenSlash
 	tokenPercent
