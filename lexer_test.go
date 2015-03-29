@@ -145,6 +145,26 @@ func TestLexLogicalOr(t *testing.T) {
 	shouldLex("||", types(tokenLogicalOr), nil, t)
 }
 
+func TestLexDecimal(t *testing.T) {
+	s := "1.2"
+	shouldLex(s, types(tokenNumber), vals(s), t)
+}
+
+func TestLexHex(t *testing.T) {
+	s := "0xF"
+	shouldLex(s, types(tokenNumber), vals(s), t)
+}
+
+func TestLexBinary(t *testing.T) {
+	s := "0b10"
+	shouldLex(s, types(tokenNumber), vals(s), t)
+}
+
+func TestLexOctal(t *testing.T) {
+	s := "077"
+	shouldLex(s, types(tokenNumber), vals(s), t)
+}
+
 // Helpers
 
 func shouldLex(s string, ts []tokenType, v *[]string, t *testing.T) {

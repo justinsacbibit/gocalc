@@ -48,10 +48,10 @@ func TestParseFunctionMultipleArguments(t *testing.T) {
 }
 
 func TestParse(t *testing.T) {
-	p := newParser("~2")
+	p := newParser("f(-a, b)")
 	e := p.parseExpr()
 	if e != nil {
-		print(e)
+		e.accept(newPrinter())
 	} else {
 		fmt.Println(p.error)
 	}

@@ -43,7 +43,7 @@ func (p *parser) parsePrimary() expr {
 		return e
 	case tokenNumber:
 		// NUMBER
-		return &literal{token.val}
+		return &valueExpr{token.val}
 	case tokenIdentifier:
 		// IDENTIFIER | IDENTIFIER '(' args ')'
 		return p.parseIdentifier(token)
@@ -90,12 +90,12 @@ func (p *parser) parseIdentifier(token *token) expr {
 		if args == nil {
 			return nil
 		}
-		return &callExpr{
+		return &funcExpr{
 			function: token.val,
 			args:     args,
 		}
 	default:
-		return &identifier{token.val}
+		return &paramExpr{token.val}
 	}
 }
 

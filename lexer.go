@@ -11,8 +11,7 @@ func newLexer(input string) *gocalcLexer {
 		input:  input,
 		state:  initialState,
 		tokens: queue{},
-		alpha:  "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
-		digits: "0123456789",
+		alpha:  "0123456789abcdefABCDEFghijklmnopqrstuvwxyzGHIJKLMNOPQRSTUVWXYZ",
 	}
 }
 
@@ -75,8 +74,10 @@ func initialState(l *gocalcLexer) stateFn {
 		case r == ' ':
 			l.ignore()
 		case (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z'):
+			l.backup()
 			return lexIdentifier
 		case r >= '0' && r <= '9':
+			l.backup()
 			return lexNumber
 		case r == '(':
 			l.emit(tokenLeftParen)
@@ -171,9 +172,27 @@ func lexOr(l *gocalcLexer) stateFn {
 }
 
 func lexNumber(l *gocalcLexer) stateFn {
-	l.acceptRun(l.digits)
+	var digits string
+	if l.accept("0") {
+		if l.accept("x") {
+			digits = l.alpha[0:22]
+		} else if l.accept("b") {
+			digits = l.alpha[0:2]
+		} else {
+			digits = l.alpha[0:8]
+		}
+	} else {
+		digits = l.alpha[0:10]
+	}
+	start := l.pos
+	l.acceptRun(digits)
+	if l.accept(".") {
+		l.acceptRun(digits)
+	}
 	if r := l.peek(); (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
 		return l.errorf("bad number syntax: %q", l.input[l.start:l.pos])
+	} else if start == l.pos {
+		return l.errorf("no number provided")
 	}
 	l.emit(tokenNumber)
 	return initialState
