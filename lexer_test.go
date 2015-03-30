@@ -4,28 +4,28 @@ import "testing"
 
 func TestLexDigit(t *testing.T) {
 	s := "1"
-	shouldLex(s, types(tokenNumber), vals(s), t)
+	shouldLex(s, types(tokenInt), vals(s), t)
 }
 
 func TestLexMultiDigit(t *testing.T) {
 	s := "111"
-	shouldLex(s, types(tokenNumber), vals(s), t)
+	shouldLex(s, types(tokenInt), vals(s), t)
 }
 
 func TestLexMultipleNumbers(t *testing.T) {
 	s := "1 2 3"
 	shouldLex(s,
-		types(tokenNumber, tokenNumber, tokenNumber),
+		types(tokenInt, tokenInt, tokenInt),
 		vals("1", "2", "3"),
 		t)
 }
 
 func TestLexNumberWithLeadingWhitespace(t *testing.T) {
-	shouldLex("  5", types(tokenNumber), vals("5"), t)
+	shouldLex("  5", types(tokenInt), vals("5"), t)
 }
 
 func TestLexNumberWithSurroundingWhitespace(t *testing.T) {
-	shouldLex("99", types(tokenNumber), vals("99"), t)
+	shouldLex("99", types(tokenInt), vals("99"), t)
 }
 
 func TestLexPlus(t *testing.T) {
@@ -50,14 +50,14 @@ func TestLexRightParen(t *testing.T) {
 
 func TestLexNumberWithSurroundingParentheses(t *testing.T) {
 	shouldLex("(5)",
-		types(tokenLeftParen, tokenNumber, tokenRightParen),
+		types(tokenLeftParen, tokenInt, tokenRightParen),
 		vals("", "5", ""),
 		t)
 }
 
 func TestLexComplex(t *testing.T) {
 	shouldLex("5 - (10 - 5)",
-		types(tokenNumber, tokenMinus, tokenLeftParen, tokenNumber, tokenMinus, tokenNumber, tokenRightParen),
+		types(tokenInt, tokenMinus, tokenLeftParen, tokenInt, tokenMinus, tokenInt, tokenRightParen),
 		vals("5", "", "", "10", "", "5", ""),
 		t)
 }
@@ -72,7 +72,7 @@ func TestLexSlash(t *testing.T) {
 
 func TestLexStarAndSlash(t *testing.T) {
 	shouldLex("5*1/2",
-		types(tokenNumber, tokenStar, tokenNumber, tokenSlash, tokenNumber),
+		types(tokenInt, tokenStar, tokenInt, tokenSlash, tokenInt),
 		vals("5", "", "1", "", "2"),
 		t)
 }
@@ -147,22 +147,22 @@ func TestLexLogicalOr(t *testing.T) {
 
 func TestLexDecimal(t *testing.T) {
 	s := "1.2"
-	shouldLex(s, types(tokenNumber), vals(s), t)
+	shouldLex(s, types(tokenFloat), vals(s), t)
 }
 
 func TestLexHex(t *testing.T) {
 	s := "0xF"
-	shouldLex(s, types(tokenNumber), vals(s), t)
+	shouldLex(s, types(tokenInt), vals(s), t)
 }
 
 func TestLexBinary(t *testing.T) {
 	s := "0b10"
-	shouldLex(s, types(tokenNumber), vals(s), t)
+	shouldLex(s, types(tokenInt), vals(s), t)
 }
 
 func TestLexOctal(t *testing.T) {
 	s := "077"
-	shouldLex(s, types(tokenNumber), vals(s), t)
+	shouldLex(s, types(tokenInt), vals(s), t)
 }
 
 // Helpers

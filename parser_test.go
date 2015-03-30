@@ -47,8 +47,20 @@ func TestParseFunctionMultipleArguments(t *testing.T) {
 	shouldParse("f(x, y)", t)
 }
 
+func TestParseDoubleBinary(t *testing.T) {
+	shouldFail("1++", t)
+}
+
+func TestParseDoubleUnaryPlus(t *testing.T) {
+	shouldParse("++1", t)
+}
+
+func TestParseDoubleUnaryMinus(t *testing.T) {
+	shouldParse("----1", t)
+}
+
 func TestParse(t *testing.T) {
-	p := newParser("f(-a, b)")
+	p := newParser("-----------1")
 	e := p.parseExpr()
 	if e != nil {
 		e.accept(newPrinter())

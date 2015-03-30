@@ -9,7 +9,8 @@ const (
 	tokenEOF
 
 	tokenIdentifier
-	tokenNumber
+	tokenInt
+	tokenFloat
 
 	tokenLeftParen
 	tokenRightParen

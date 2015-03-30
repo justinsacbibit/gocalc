@@ -29,8 +29,12 @@ func (p *parser) parsePrimary() expr {
 
 	switch token.typ {
 	case tokenMinus, tokenPlus, tokenLogicalNot, tokenBitwiseNot:
+		e := p.parse(precedence(token, unary))
+		if e == nil {
+			return nil
+		}
 		return &unaryExpr{
-			expr: p.parse(precedence(token, unary)),
+			expr: e,
 			op:   token,
 		}
 	case tokenLeftParen:
@@ -41,9 +45,9 @@ func (p *parser) parsePrimary() expr {
 			return nil
 		}
 		return e
-	case tokenNumber:
+	case tokenInt, tokenFloat:
 		// NUMBER
-		return &valueExpr{token.val}
+		return newValueExpr(token.val, token.typ == tokenFloat)
 	case tokenIdentifier:
 		// IDENTIFIER | IDENTIFIER '(' args ')'
 		return p.parseIdentifier(token)
@@ -110,6 +114,9 @@ func (p *parser) parse(prec int) expr {
 		p.consume()
 		q := 1 + precedence(lookahead, binary)
 		r := p.parse(q)
+		if r == nil {
+			return nil
+		}
 		e = &binaryExpr{
 			left:  e,
 			right: r,
@@ -169,5 +176,5 @@ func precedence(token *token, operatorType operatorType) int {
 		}
 	}
 
-	panic("unsupported operator")
+	return -1
 }

@@ -1,14 +1,17 @@
 package gocalc
 
-// An Expression does
+// An Expression is used to compile and evaluate a string representation of a
+// mathematical expression. Multiple goroutines can use an Expression, as
+// parameters and functions are not stored within the Expression, and are
+// instead resolved during each evaluation.
 //
 type Expression struct {
-	parser *parser
-	tree   expr
-	raw    string
+	tree expr
+	raw  string
 }
 
-// NewExpr compiles a string expression
+// NewExpr initializes and returns an Expression given the string
+// representation, or an error if compilation failed.
 //
 func NewExpr(expr string) (*Expression, error) {
 	p := newParser(expr)
@@ -16,22 +19,23 @@ func NewExpr(expr string) (*Expression, error) {
 	if t == nil {
 		return nil, newCompileError(p.error)
 	}
+
 	return &Expression{
-		parser: newParser(expr),
-		tree:   t,
-		raw:    expr,
+		tree: t,
+		raw:  expr,
 	}, nil
 }
 
-// Evaluate evaluates expression
+// Evaluate evaluates an Expression. If any parameters or function are found,
+// Evaluate will call the appropriate resolver. The evaluation result is
+// returned, or an error if evaluation failed.
 //
-func (e *Expression) Evaluate() (interface{}, error) {
-	v := newEvaluator()
-	e.tree.accept(v)
-	return v.result, nil
+func (e *Expression) Evaluate(p ParamResolver, f FuncResolver) (interface{}, error) {
+	v := newEvaluator(p, f)
+	return v.Evaluate(e.tree)
 }
 
-// CompileError is
+// CompileError represents a compilation error of an expression.
 //
 type CompileError struct {
 	s string

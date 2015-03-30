@@ -173,6 +173,7 @@ func lexOr(l *gocalcLexer) stateFn {
 
 func lexNumber(l *gocalcLexer) stateFn {
 	var digits string
+	typ := tokenInt
 	if l.accept("0") {
 		if l.accept("x") {
 			digits = l.alpha[0:22]
@@ -187,6 +188,7 @@ func lexNumber(l *gocalcLexer) stateFn {
 	start := l.pos
 	l.acceptRun(digits)
 	if l.accept(".") {
+		typ = tokenFloat
 		l.acceptRun(digits)
 	}
 	if r := l.peek(); (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
@@ -194,7 +196,7 @@ func lexNumber(l *gocalcLexer) stateFn {
 	} else if start == l.pos {
 		return l.errorf("no number provided")
 	}
-	l.emit(tokenNumber)
+	l.emit(typ)
 	return initialState
 }
 
