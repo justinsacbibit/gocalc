@@ -2,35 +2,32 @@ package gocalc
 
 import "fmt"
 
-type ParamResolver func(string) interface{}
-type FuncResolver func(string, ...func() (interface{}, error)) (interface{}, error)
-
-type Evaluator struct {
+type evaluator struct {
 	result        interface{}
 	stop          bool
 	error         error
 	paramResolver ParamResolver
-	funcResolver  FuncResolver
+	funcHandler   FuncHandler
 }
 
-func newEvaluator(p ParamResolver, f FuncResolver) *Evaluator {
-	return &Evaluator{
+func newEvaluator(p ParamResolver, f FuncHandler) *evaluator {
+	return &evaluator{
 		paramResolver: p,
-		funcResolver:  f,
+		funcHandler:   f,
 	}
 }
 
-func (e *Evaluator) Evaluate(t expr) (interface{}, error) {
+func (e *evaluator) Evaluate(t expr) (interface{}, error) {
 	t.accept(e)
 	return e.result, e.error
 }
 
-func (e *Evaluator) err(format string, args ...interface{}) {
+func (e *evaluator) err(format string, args ...interface{}) {
 	e.error = newEvaluationError(fmt.Sprintf(format, args...))
 	e.stop = true
 }
 
-func (e *Evaluator) visitBinaryExpr(b *binaryExpr) {
+func (e *evaluator) visitBinaryExpr(b *binaryExpr) {
 	if e.stop {
 		return
 	}
@@ -54,13 +51,13 @@ func (e *Evaluator) visitBinaryExpr(b *binaryExpr) {
 	}
 }
 
-func createFunc(e *Evaluator, arg expr) func() (interface{}, error) {
+func createFunc(e *evaluator, arg expr) func() (interface{}, error) {
 	return func() (interface{}, error) {
 		return e.Evaluate(arg)
 	}
 }
 
-func (e *Evaluator) mapLazy(args []expr) []func() (interface{}, error) {
+func (e *evaluator) mapLazy(args []expr) []func() (interface{}, error) {
 	l := len(args)
 	r := make([]func() (interface{}, error), l, l)
 	for i, arg := range args {
@@ -69,13 +66,13 @@ func (e *Evaluator) mapLazy(args []expr) []func() (interface{}, error) {
 	return r
 }
 
-func (e *Evaluator) visitFuncExpr(f *funcExpr) {
+func (e *evaluator) visitFuncExpr(f *funcExpr) {
 	if e.stop {
 		return
 	}
 
-	if e.funcResolver != nil {
-		if res, err := e.funcResolver(f.function, e.mapLazy(f.args)...); err == nil && res != nil {
+	if e.funcHandler != nil {
+		if res, err := e.funcHandler(f.function, e.mapLazy(f.args)...); err == nil && res != nil {
 			e.result = res
 			return
 		} else if err != nil {
@@ -100,7 +97,7 @@ func (e *Evaluator) visitFuncExpr(f *funcExpr) {
 	}
 }
 
-func (e *Evaluator) visitUnaryExpr(u *unaryExpr) {
+func (e *evaluator) visitUnaryExpr(u *unaryExpr) {
 	if e.stop {
 		return
 	}
@@ -115,7 +112,7 @@ func (e *Evaluator) visitUnaryExpr(u *unaryExpr) {
 	}
 }
 
-func (e *Evaluator) visitValueExpr(v *valueExpr) {
+func (e *evaluator) visitValueExpr(v *valueExpr) {
 	if e.stop {
 		return
 	}
@@ -123,7 +120,7 @@ func (e *Evaluator) visitValueExpr(v *valueExpr) {
 	e.result = v.val
 }
 
-func (e *Evaluator) visitParamExpr(p *paramExpr) {
+func (e *evaluator) visitParamExpr(p *paramExpr) {
 	if e.stop {
 		return
 	}
