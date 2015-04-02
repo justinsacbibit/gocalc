@@ -38,6 +38,32 @@ func (e *evaluator) visitBinaryExpr(b *binaryExpr) {
 	right := e.result
 
 	switch b.op.typ {
+	case tokenLogicalOr:
+		e.result = left.(bool) || right.(bool)
+	case tokenLogicalAnd:
+		e.result = left.(bool) && right.(bool)
+	case tokenBitwiseOr:
+		e.result = float64(int(left.(float64)) | int(right.(float64)))
+	case tokenBitwiseAnd:
+		e.result = float64(int(left.(float64)) & int(right.(float64)))
+	case tokenBitwiseXor:
+		e.result = float64(int(left.(float64)) ^ int(right.(float64)))
+	case tokenEqual:
+		e.result = left.(float64) == right.(float64)
+	case tokenNotEqual:
+		e.result = left.(float64) != right.(float64)
+	case tokenLessThan:
+		e.result = left.(float64) < right.(float64)
+	case tokenLessOrEqual:
+		e.result = left.(float64) <= right.(float64)
+	case tokenGreaterThan:
+		e.result = left.(float64) > right.(float64)
+	case tokenGreaterOrEqual:
+		e.result = left.(float64) >= right.(float64)
+	case tokenLeftShift:
+		e.result = float64(int(left.(float64)) << uint(right.(float64)))
+	case tokenRightShift:
+		e.result = float64(int(left.(float64)) >> uint(right.(float64)))
 	case tokenPlus:
 		e.result = left.(float64) + right.(float64)
 	case tokenMinus:
@@ -46,6 +72,8 @@ func (e *evaluator) visitBinaryExpr(b *binaryExpr) {
 		e.result = left.(float64) * right.(float64)
 	case tokenSlash:
 		e.result = left.(float64) / right.(float64)
+	case tokenPercent:
+		e.result = float64(int(left.(float64)) % int(right.(float64)))
 	default:
 		e.err("Unsupported binary operator %s", b.op)
 	}
@@ -107,6 +135,10 @@ func (e *evaluator) visitUnaryExpr(u *unaryExpr) {
 	switch u.op.typ {
 	case tokenMinus:
 		e.result = -(e.result.(float64))
+	case tokenLogicalNot:
+		e.result = !e.result.(bool)
+	case tokenBitwiseNot:
+		e.result = float64(^int(e.result.(float64)))
 	default:
 		e.err("Unsupported unary operator %s", u.op)
 	}
