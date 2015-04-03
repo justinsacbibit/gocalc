@@ -37,6 +37,8 @@ func (e *evaluator) visitBinaryExpr(b *binaryExpr) {
 	b.right.accept(e)
 	right := e.result
 
+	// TODO: consider support for integers as underlying type
+	// consider eliminating type assertions for performance
 	switch b.op.typ {
 	case tokenLogicalOr:
 		e.result = left.(bool) || right.(bool)
