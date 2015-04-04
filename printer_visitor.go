@@ -63,24 +63,28 @@ func (p *printerVisitor) visitUnaryExpr(u *unaryExpr) {
 	p.println("}")
 }
 
-// func (p *printerVisitor) visitValueExpr(v *valueExpr) {
-// 	p.println("*valueExpr {")
-// 	p.indent++
-// 	p.printf("val: \"%s\"\n", v.floatVal)
-// 	p.indent--
-// 	p.println("}")
-// }
-
 func (p *printerVisitor) visitBoolExpr(b *boolExpr) {
-	panic("not implemented")
+	p.println("*boolExpr {")
+	p.indent++
+	p.printf("val: %t\n", b.val)
+	p.indent--
+	p.println("}")
 }
 
-func (p *printerVisitor) visitFloatExpr(b *floatExpr) {
-	panic("not implemented")
+func (p *printerVisitor) visitFloatExpr(f *floatExpr) {
+	p.println("*floatExpr {")
+	p.indent++
+	p.printf("val: %f\n", f.val)
+	p.indent--
+	p.println("}")
 }
 
 func (p *printerVisitor) visitIntExpr(i *intExpr) {
-	panic("not implemented")
+	p.println("*intExpr {")
+	p.indent++
+	p.printf("val: %d\n", i.val)
+	p.indent--
+	p.println("}")
 }
 
 func (p *printerVisitor) visitParamExpr(e *paramExpr) {

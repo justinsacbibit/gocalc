@@ -151,11 +151,11 @@ func (e *evaluator) visitBoolExpr(b *boolExpr) {
 }
 
 func (e *evaluator) visitFloatExpr(f *floatExpr) {
-	panic("not implemented")
+	e.result = f.val
 }
 
 func (e *evaluator) visitIntExpr(i *intExpr) {
-	panic("not implemented")
+	e.result = float64(i.val)
 }
 
 func (e *evaluator) visitParamExpr(p *paramExpr) {
