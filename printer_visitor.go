@@ -2,28 +2,28 @@ package gocalc
 
 import "fmt"
 
-type printer struct {
+type printerVisitor struct {
 	indent int
 	ignore bool
 }
 
 var indentStr = ".   "
 
-func newPrinter() *printer {
-	return &printer{}
+func newPrinter() *printerVisitor {
+	return &printerVisitor{}
 }
 
-func (p *printer) printf(format string, args ...interface{}) {
+func (p *printerVisitor) printf(format string, args ...interface{}) {
 	p.printIndent()
 	fmt.Printf(format, args...)
 }
 
-func (p *printer) println(s string) {
+func (p *printerVisitor) println(s string) {
 	p.printIndent()
 	fmt.Println(s)
 }
 
-func (p *printer) visitBinaryExpr(b *binaryExpr) {
+func (p *printerVisitor) visitBinaryExpr(b *binaryExpr) {
 	p.println("*binaryExpr {")
 	p.indent++
 	p.printf("lhs: ")
@@ -37,7 +37,7 @@ func (p *printer) visitBinaryExpr(b *binaryExpr) {
 	p.println("}")
 }
 
-func (p *printer) visitFuncExpr(f *funcExpr) {
+func (p *printerVisitor) visitFuncExpr(f *funcExpr) {
 	p.println("*funcExpr {")
 	p.indent++
 	p.printf("func: %s\n", f.function)
@@ -52,7 +52,7 @@ func (p *printer) visitFuncExpr(f *funcExpr) {
 	p.println("}")
 }
 
-func (p *printer) visitUnaryExpr(u *unaryExpr) {
+func (p *printerVisitor) visitUnaryExpr(u *unaryExpr) {
 	p.println("*unaryExpr {")
 	p.indent++
 	p.printf("op: %s\n", u.op.val)
@@ -63,15 +63,27 @@ func (p *printer) visitUnaryExpr(u *unaryExpr) {
 	p.println("}")
 }
 
-func (p *printer) visitValueExpr(v *valueExpr) {
-	p.println("*valueExpr {")
-	p.indent++
-	p.printf("val: \"%s\"\n", v.val)
-	p.indent--
-	p.println("}")
+// func (p *printerVisitor) visitValueExpr(v *valueExpr) {
+// 	p.println("*valueExpr {")
+// 	p.indent++
+// 	p.printf("val: \"%s\"\n", v.floatVal)
+// 	p.indent--
+// 	p.println("}")
+// }
+
+func (p *printerVisitor) visitBoolExpr(b *boolExpr) {
+	panic("not implemented")
 }
 
-func (p *printer) visitParamExpr(e *paramExpr) {
+func (p *printerVisitor) visitFloatExpr(b *floatExpr) {
+	panic("not implemented")
+}
+
+func (p *printerVisitor) visitIntExpr(i *intExpr) {
+	panic("not implemented")
+}
+
+func (p *printerVisitor) visitParamExpr(e *paramExpr) {
 	p.println("*identifier {")
 	p.indent++
 	p.printf("val: \"%s\"\n", e.identifier)
@@ -79,7 +91,7 @@ func (p *printer) visitParamExpr(e *paramExpr) {
 	p.println("}")
 }
 
-func (p *printer) printIndent() {
+func (p *printerVisitor) printIndent() {
 	if p.ignore {
 		p.ignore = false
 		return

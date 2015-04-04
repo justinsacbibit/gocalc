@@ -1,6 +1,9 @@
 package gocalc
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 func newParser(expr string) *parser {
 	return &parser{
@@ -45,9 +48,12 @@ func (p *parser) parsePrimary() expr {
 			return nil
 		}
 		return e
-	case tokenInt, tokenFloat:
-		// NUMBER
-		return newValueExpr(token.val, token.typ == tokenFloat)
+	case tokenInt:
+		i, _ := strconv.ParseInt(token.val, 0, 32)
+		return &intExpr{i}
+	case tokenFloat:
+		f, _ := strconv.ParseFloat(token.val, 64)
+		return &floatExpr{f}
 	case tokenIdentifier:
 		// IDENTIFIER | IDENTIFIER '(' args ')'
 		return p.parseIdentifier(token)

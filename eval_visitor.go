@@ -146,12 +146,16 @@ func (e *evaluator) visitUnaryExpr(u *unaryExpr) {
 	}
 }
 
-func (e *evaluator) visitValueExpr(v *valueExpr) {
-	if e.stop {
-		return
-	}
+func (e *evaluator) visitBoolExpr(b *boolExpr) {
+	panic("not implemented")
+}
 
-	e.result = v.val
+func (e *evaluator) visitFloatExpr(f *floatExpr) {
+	panic("not implemented")
+}
+
+func (e *evaluator) visitIntExpr(i *intExpr) {
+	panic("not implemented")
 }
 
 func (e *evaluator) visitParamExpr(p *paramExpr) {
