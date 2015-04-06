@@ -63,7 +63,7 @@ func TestParse(t *testing.T) {
 	p := newParser("-----------1")
 	e := p.parseExpr()
 	if e != nil {
-		e.accept(newPrinter())
+		// e.accept(newPrinter())
 	} else {
 		fmt.Println(p.error)
 	}

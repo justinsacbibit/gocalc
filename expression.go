@@ -41,7 +41,7 @@ type FuncHandler func(string, ...func() (interface{}, error)) (interface{}, erro
 //
 func (e *Expression) Evaluate(p ParamResolver, f FuncHandler) (interface{}, error) {
 	v := newEvaluator(p, f)
-	return v.Evaluate(e.tree)
+	return v.evaluate(e.tree)
 }
 
 // CompileError represents a compilation error of an expression.

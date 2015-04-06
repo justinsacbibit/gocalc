@@ -17,13 +17,14 @@ func newEvaluator(p ParamResolver, f FuncHandler) *evaluator {
 	}
 }
 
-func (e *evaluator) Evaluate(t expr) (interface{}, error) {
+func (e *evaluator) evaluate(t expr) (interface{}, error) {
 	t.accept(e)
 	return e.result, e.error
 }
 
 func (e *evaluator) err(format string, args ...interface{}) {
 	e.error = newEvaluationError(fmt.Sprintf(format, args...))
+	// TODO: replace stop member with calls to panic?
 	e.stop = true
 }
 
@@ -37,53 +38,237 @@ func (e *evaluator) visitBinaryExpr(b *binaryExpr) {
 	b.right.accept(e)
 	right := e.result
 
-	// TODO: consider support for integers as underlying type
-	// consider eliminating type assertions for performance
+	e.result = nil
+
 	switch b.op.typ {
 	case tokenLogicalOr:
-		e.result = left.(bool) || right.(bool)
+		switch l := left.(type) {
+		case bool:
+			switch r := right.(type) {
+			case bool:
+				e.result = l || r
+			}
+		}
 	case tokenLogicalAnd:
-		e.result = left.(bool) && right.(bool)
+		switch l := left.(type) {
+		case bool:
+			switch r := right.(type) {
+			case bool:
+				e.result = l && r
+			}
+		}
 	case tokenBitwiseOr:
-		e.result = float64(int(left.(float64)) | int(right.(float64)))
+		switch l := left.(type) {
+		case int64:
+			switch r := right.(type) {
+			case int64:
+				e.result = l | r
+			}
+		}
 	case tokenBitwiseAnd:
-		e.result = float64(int(left.(float64)) & int(right.(float64)))
+		switch l := left.(type) {
+		case int64:
+			switch r := right.(type) {
+			case int64:
+				e.result = l & r
+			}
+		}
 	case tokenBitwiseXor:
-		e.result = float64(int(left.(float64)) ^ int(right.(float64)))
+		switch l := left.(type) {
+		case int64:
+			switch r := right.(type) {
+			case int64:
+				e.result = l & r
+			}
+		}
 	case tokenEqual:
-		e.result = left.(float64) == right.(float64)
+		switch l := left.(type) {
+		default:
+			switch r := right.(type) {
+			default:
+				e.result = l == r
+			}
+		}
 	case tokenNotEqual:
-		e.result = left.(float64) != right.(float64)
+		switch l := left.(type) {
+		default:
+			switch r := right.(type) {
+			default:
+				e.result = l != r
+			}
+		}
 	case tokenLessThan:
-		e.result = left.(float64) < right.(float64)
+		switch l := left.(type) {
+		case int64:
+			switch r := right.(type) {
+			case int64:
+				e.result = l < r
+			case float64:
+				e.result = float64(l) < r
+			}
+		case float64:
+			switch r := right.(type) {
+			case float64:
+				e.result = l < r
+			case int64:
+				e.result = l < float64(r)
+			}
+		}
 	case tokenLessOrEqual:
-		e.result = left.(float64) <= right.(float64)
+		switch l := left.(type) {
+		case int64:
+			switch r := right.(type) {
+			case int64:
+				e.result = l <= r
+			case float64:
+				e.result = float64(l) <= r
+			}
+		case float64:
+			switch r := right.(type) {
+			case float64:
+				e.result = l <= r
+			case int64:
+				e.result = l <= float64(r)
+			}
+		}
 	case tokenGreaterThan:
-		e.result = left.(float64) > right.(float64)
+		switch l := left.(type) {
+		case int64:
+			switch r := right.(type) {
+			case int64:
+				e.result = l > r
+			case float64:
+				e.result = float64(l) > r
+			}
+		case float64:
+			switch r := right.(type) {
+			case float64:
+				e.result = l > r
+			case int64:
+				e.result = l > float64(r)
+			}
+		}
 	case tokenGreaterOrEqual:
-		e.result = left.(float64) >= right.(float64)
+		switch l := left.(type) {
+		case int64:
+			switch r := right.(type) {
+			case int64:
+				e.result = l >= r
+			case float64:
+				e.result = float64(l) >= r
+			}
+		case float64:
+			switch r := right.(type) {
+			case float64:
+				e.result = l >= r
+			case int64:
+				e.result = l >= float64(r)
+			}
+		}
 	case tokenLeftShift:
-		e.result = float64(int(left.(float64)) << uint(right.(float64)))
+		switch l := left.(type) {
+		case int64:
+			switch r := right.(type) {
+			case int64:
+				e.result = l << uint64(r)
+			}
+		}
 	case tokenRightShift:
-		e.result = float64(int(left.(float64)) >> uint(right.(float64)))
+		switch l := left.(type) {
+		case int64:
+			switch r := right.(type) {
+			case int64:
+				e.result = l >> uint64(r)
+			}
+		}
 	case tokenPlus:
-		e.result = left.(float64) + right.(float64)
+		switch l := left.(type) {
+		case int64:
+			switch r := right.(type) {
+			case int64:
+				e.result = l + r
+			case float64:
+				e.result = float64(l) + r
+			}
+		case float64:
+			switch r := right.(type) {
+			case float64:
+				e.result = l + r
+			case int64:
+				e.result = l + float64(r)
+			}
+		}
 	case tokenMinus:
-		e.result = left.(float64) - right.(float64)
+		switch l := left.(type) {
+		case int64:
+			switch r := right.(type) {
+			case int64:
+				e.result = l - r
+			case float64:
+				e.result = float64(l) - r
+			}
+		case float64:
+			switch r := right.(type) {
+			case float64:
+				e.result = l - r
+			case int64:
+				e.result = l - float64(r)
+			}
+		}
 	case tokenStar:
-		e.result = left.(float64) * right.(float64)
+		switch l := left.(type) {
+		case int64:
+			switch r := right.(type) {
+			case int64:
+				e.result = l * r
+			case float64:
+				e.result = float64(l) * r
+			}
+		case float64:
+			switch r := right.(type) {
+			case float64:
+				e.result = l * r
+			case int64:
+				e.result = l * float64(r)
+			}
+		}
 	case tokenSlash:
-		e.result = left.(float64) / right.(float64)
+		switch l := left.(type) {
+		case int64:
+			switch r := right.(type) {
+			case int64:
+				e.result = l / r
+			case float64:
+				e.result = float64(l) / r
+			}
+		case float64:
+			switch r := right.(type) {
+			case float64:
+				e.result = l / r
+			case int64:
+				e.result = l / float64(r)
+			}
+		}
 	case tokenPercent:
-		e.result = float64(int(left.(float64)) % int(right.(float64)))
+		switch l := left.(type) {
+		case int64:
+			switch r := right.(type) {
+			case int64:
+				e.result = l % r
+			}
+		}
 	default:
 		e.err("Unsupported binary operator %s", b.op)
+	}
+
+	if e.result == nil {
+		e.err("Binary operation type mismatch; left: %s, right: %s, op: %s", left, right, b.op)
 	}
 }
 
 func createFunc(e *evaluator, arg expr) func() (interface{}, error) {
 	return func() (interface{}, error) {
-		return e.Evaluate(arg)
+		return e.evaluate(arg)
 	}
 }
 
@@ -118,7 +303,7 @@ func (e *evaluator) visitFuncExpr(f *funcExpr) {
 			return
 		}
 
-		r, _ := e.Evaluate(f.args[0])
+		r, _ := e.evaluate(f.args[0])
 		if f := r.(float64); f < 0 {
 			e.result = -f
 		}
@@ -136,18 +321,29 @@ func (e *evaluator) visitUnaryExpr(u *unaryExpr) {
 
 	switch u.op.typ {
 	case tokenMinus:
-		e.result = -(e.result.(float64))
+		switch r := e.result.(type) {
+		case int64:
+			e.result = -r
+		case float64:
+			e.result = -r
+		}
 	case tokenLogicalNot:
-		e.result = !e.result.(bool)
+		switch r := e.result.(type) {
+		case bool:
+			e.result = !r
+		}
 	case tokenBitwiseNot:
-		e.result = float64(^int(e.result.(float64)))
+		switch r := e.result.(type) {
+		case int64:
+			e.result = ^r
+		}
 	default:
 		e.err("Unsupported unary operator %s", u.op)
 	}
 }
 
 func (e *evaluator) visitBoolExpr(b *boolExpr) {
-	panic("not implemented")
+	e.result = b.val
 }
 
 func (e *evaluator) visitFloatExpr(f *floatExpr) {
@@ -155,7 +351,7 @@ func (e *evaluator) visitFloatExpr(f *floatExpr) {
 }
 
 func (e *evaluator) visitIntExpr(i *intExpr) {
-	e.result = float64(i.val)
+	e.result = i.val
 }
 
 func (e *evaluator) visitParamExpr(p *paramExpr) {

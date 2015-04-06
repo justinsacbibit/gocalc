@@ -5,11 +5,6 @@ type expr interface {
 	accept(exprVisitor)
 }
 
-// Expressions which represent a literal value implement the valueExpr
-// interface.
-type valueExpr interface {
-}
-
 type (
 	// A binaryExpr represents a binary expression.
 	binaryExpr struct {
