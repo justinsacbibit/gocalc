@@ -9,6 +9,9 @@ const (
 	tokenEOF
 
 	tokenIdentifier
+	tokenTrue
+	tokenFalse
+
 	tokenInt
 	tokenFloat
 

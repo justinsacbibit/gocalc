@@ -38,11 +38,11 @@ func TestAccepts(t *testing.T) {
 		accepter.accept(m)
 
 		if len(m.visited) > 1 {
-			t.Errorf("More than one expr visited: %s", m.visited)
+			t.Errorf("More than one expr visited: %#v", m.visited)
 		} else if len(m.visited) < 1 {
 			t.Error("No expr visited")
 		} else if visited := m.visited[0]; visited != accepter {
-			t.Errorf("Wrong expr was visited: %s", visited)
+			t.Errorf("Wrong expr was visited: %T", visited)
 		}
 	}
 }

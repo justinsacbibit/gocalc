@@ -56,7 +56,15 @@ func TestParseDoubleUnaryPlus(t *testing.T) {
 }
 
 func TestParseDoubleUnaryMinus(t *testing.T) {
-	shouldParse("----1", t)
+	shouldParse("--1", t)
+}
+
+func TestParseTrue(t *testing.T) {
+	shouldParse("true", t)
+}
+
+func TestParseFalse(t *testing.T) {
+	shouldParse("false", t)
 }
 
 func TestParse(t *testing.T) {

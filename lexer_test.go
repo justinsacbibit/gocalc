@@ -165,6 +165,41 @@ func TestLexOctal(t *testing.T) {
 	shouldLex(s, types(tokenInt), vals(s), t)
 }
 
+func TestLexZero(t *testing.T) {
+	s := "0"
+	shouldLex(s, types(tokenInt), vals(s), t)
+}
+
+func TestLexZeroDot(t *testing.T) {
+	s := "0."
+	shouldLex(s, types(tokenFloat), vals(s), t)
+}
+
+func TestLexBitwiseNot(t *testing.T) {
+	s := "~"
+	shouldLex(s, types(tokenBitwiseNot), nil, t)
+}
+
+func TestLexTrue(t *testing.T) {
+	s := "true"
+	shouldLex(s, types(tokenTrue), nil, t)
+}
+
+func TestLexFalse(t *testing.T) {
+	s := "false"
+	shouldLex(s, types(tokenFalse), nil, t)
+}
+
+func TestLexInvalidNumber(t *testing.T) {
+	s := "3a"
+	lexShouldFail(s, t)
+}
+
+func TestLexInvalid(t *testing.T) {
+	s := "`"
+	lexShouldFail(s, t)
+}
+
 // Helpers
 
 func shouldLex(s string, ts []tokenType, v *[]string, t *testing.T) {
@@ -183,6 +218,31 @@ func shouldLex(s string, ts []tokenType, v *[]string, t *testing.T) {
 	}
 	if typ := l.token().typ; typ != tokenEOF {
 		t.Errorf("Expected EOF, got %s", typ)
+	}
+}
+
+func lexShouldFail(s string, t *testing.T) {
+	l := newLexer(s)
+	f := false
+	ts := []*token{}
+
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("Lex did not fail, tokens: %v", ts)
+		}
+	}()
+
+	for {
+		to := l.token()
+		ts = append(ts, to)
+		if to.typ == tokenError {
+			f = true
+			break
+		}
+	}
+
+	if !f {
+		t.Errorf("Lex did not fail, tokens: %v", ts)
 	}
 }
 

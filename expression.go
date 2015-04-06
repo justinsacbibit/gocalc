@@ -39,9 +39,16 @@ type FuncHandler func(string, ...func() (interface{}, error)) (interface{}, erro
 // Evaluate will call the appropriate resolver. The evaluation result is
 // returned, or an error if evaluation failed.
 //
-func (e *Expression) Evaluate(p ParamResolver, f FuncHandler) (interface{}, error) {
+func (e *Expression) Evaluate(p ParamResolver, f FuncHandler) (result interface{}, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			result = nil
+			err = r.(EvaluationError)
+		}
+	}()
+
 	v := newEvaluator(p, f)
-	return v.evaluate(e.tree)
+	return v.evaluate(e.tree), nil
 }
 
 // CompileError represents a compilation error of an expression.

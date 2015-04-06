@@ -54,6 +54,10 @@ func (p *parser) parsePrimary() expr {
 	case tokenFloat:
 		f, _ := strconv.ParseFloat(token.val, 64)
 		return &floatExpr{f}
+	case tokenTrue:
+		return &boolExpr{true}
+	case tokenFalse:
+		return &boolExpr{false}
 	case tokenIdentifier:
 		// IDENTIFIER | IDENTIFIER '(' args ')'
 		return p.parseIdentifier(token)

@@ -4,8 +4,6 @@ import "fmt"
 
 type evaluator struct {
 	result        interface{}
-	stop          bool
-	error         error
 	paramResolver ParamResolver
 	funcHandler   FuncHandler
 }
@@ -17,24 +15,29 @@ func newEvaluator(p ParamResolver, f FuncHandler) *evaluator {
 	}
 }
 
-func (e *evaluator) evaluate(t expr) (interface{}, error) {
+func (e *evaluator) evaluate(t expr) interface{} {
 	t.accept(e)
-	return e.result, e.error
+	return e.result
 }
 
-func (e *evaluator) err(format string, args ...interface{}) {
-	e.error = newEvaluationError(fmt.Sprintf(format, args...))
-	// TODO: replace stop member with calls to panic?
-	e.stop = true
+// EvaluationError is the type of an expression evaluation error.
+//
+type EvaluationError string
+
+// Error is EvaluationError's implementation of the error interface.
+//
+func (e EvaluationError) Error() string {
+	return string(e)
+}
+
+func (e *evaluator) error(format string, args ...interface{}) {
+	panic(EvaluationError(fmt.Sprintf(format, args...)))
 }
 
 func (e *evaluator) visitBinaryExpr(b *binaryExpr) {
-	if e.stop {
-		return
-	}
-
 	b.left.accept(e)
 	left := e.result
+
 	b.right.accept(e)
 	right := e.result
 
@@ -258,17 +261,24 @@ func (e *evaluator) visitBinaryExpr(b *binaryExpr) {
 			}
 		}
 	default:
-		e.err("Unsupported binary operator %s", b.op)
+		e.error("Unsupported binary operator %v", b.op)
 	}
 
 	if e.result == nil {
-		e.err("Binary operation type mismatch; left: %s, right: %s, op: %s", left, right, b.op)
+		e.error("Binary operation type error; left: %v (%T), right: %v (%T), op: %v",
+			left, left, right, right, b.op)
 	}
 }
 
 func createFunc(e *evaluator, arg expr) func() (interface{}, error) {
-	return func() (interface{}, error) {
-		return e.evaluate(arg)
+	return func() (param interface{}, err error) {
+		defer func() {
+			if r := recover(); r != nil {
+				param = nil
+				err = r.(EvaluationError)
+			}
+		}()
+		return e.evaluate(arg), nil
 	}
 }
 
@@ -282,63 +292,62 @@ func (e *evaluator) mapLazy(args []expr) []func() (interface{}, error) {
 }
 
 func (e *evaluator) visitFuncExpr(f *funcExpr) {
-	if e.stop {
-		return
-	}
-
 	if e.funcHandler != nil {
-		if res, err := e.funcHandler(f.function, e.mapLazy(f.args)...); err == nil && res != nil {
+		res, err := e.funcHandler(f.function, e.mapLazy(f.args)...)
+		if err != nil {
+			panic(err)
+		} else {
 			e.result = res
-			return
-		} else if err != nil {
-			e.err("Error occurred handling function %s: %s", f.function, err.Error())
-			return
 		}
+		return
 	}
 
 	switch f.function {
 	case "abs":
 		if l := len(f.args); l != 1 {
-			e.err("abs takes one param, got %d", l)
+			e.error("abs takes one param, got %d", l)
 			return
 		}
 
-		r, _ := e.evaluate(f.args[0])
+		r := e.evaluate(f.args[0])
 		if f := r.(float64); f < 0 {
 			e.result = -f
 		}
 	default:
-		e.err("Unrecognized function %s", f.function)
+		e.error("Unrecognized function %s", f.function)
 	}
 }
 
 func (e *evaluator) visitUnaryExpr(u *unaryExpr) {
-	if e.stop {
-		return
-	}
-
 	u.expr.accept(e)
+	operand := e.result
+
+	e.result = nil
 
 	switch u.op.typ {
 	case tokenMinus:
-		switch r := e.result.(type) {
+		switch r := operand.(type) {
 		case int64:
 			e.result = -r
 		case float64:
 			e.result = -r
 		}
 	case tokenLogicalNot:
-		switch r := e.result.(type) {
+		switch r := operand.(type) {
 		case bool:
 			e.result = !r
 		}
 	case tokenBitwiseNot:
-		switch r := e.result.(type) {
+		switch r := operand.(type) {
 		case int64:
 			e.result = ^r
 		}
 	default:
-		e.err("Unsupported unary operator %s", u.op)
+		e.error("Unsupported unary operator %v", u.op)
+	}
+
+	if e.result == nil {
+		e.error("Unary operation type mismatch; operator: %v, operand: %v (%T)", u.op, operand, operand)
 	}
 }
 
@@ -355,10 +364,6 @@ func (e *evaluator) visitIntExpr(i *intExpr) {
 }
 
 func (e *evaluator) visitParamExpr(p *paramExpr) {
-	if e.stop {
-		return
-	}
-
 	if e.paramResolver != nil {
 		if res := e.paramResolver(p.identifier); res != nil {
 			e.result = res
@@ -366,17 +371,5 @@ func (e *evaluator) visitParamExpr(p *paramExpr) {
 		}
 	}
 
-	e.err("Identifier \"%s\" undefined", p.identifier)
-}
-
-type EvaluationError struct {
-	s string
-}
-
-func (e *EvaluationError) Error() string {
-	return e.s
-}
-
-func newEvaluationError(s string) *EvaluationError {
-	return &EvaluationError{s}
+	e.error("Identifier \"%s\" undefined", p.identifier)
 }

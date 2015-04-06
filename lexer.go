@@ -24,7 +24,6 @@ func (l *gocalcLexer) token() *token {
 			return l.tokens.pop()
 		}
 	}
-	panic("not reached")
 }
 
 func (l *gocalcLexer) peekToken() *token {
@@ -36,7 +35,6 @@ func (l *gocalcLexer) peekToken() *token {
 			return l.tokens.first()
 		}
 	}
-	panic("not reached")
 }
 
 // mark: Internal use
@@ -65,12 +63,12 @@ func (l *gocalcLexer) emit(t tokenType) {
 }
 
 func initialState(l *gocalcLexer) stateFn {
+F:
 	for {
 		r := l.next()
 		switch {
 		case r == eof:
-			l.emit(tokenEOF)
-			return nil
+			break F
 		case r == ' ':
 			l.ignore()
 		case (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z'):
@@ -185,7 +183,6 @@ func lexNumber(l *gocalcLexer) stateFn {
 	} else {
 		digits = l.alpha[0:10]
 	}
-	start := l.pos
 	l.acceptRun(digits)
 	if l.accept(".") {
 		typ = tokenFloat
@@ -193,16 +190,22 @@ func lexNumber(l *gocalcLexer) stateFn {
 	}
 	if r := l.peek(); (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
 		return l.errorf("bad number syntax: %q", l.input[l.start:l.pos])
-	} else if start == l.pos {
-		return l.errorf("no number provided")
 	}
 	l.emit(typ)
 	return initialState
 }
 
 func lexIdentifier(l *gocalcLexer) stateFn {
+	t := l.accept("true")
+	f := l.accept("false")
 	l.acceptRun(l.alpha)
-	l.emit(tokenIdentifier)
+	if length := l.pos - l.start; length == 4 && t {
+		l.emit(tokenTrue)
+	} else if length == 5 && f {
+		l.emit(tokenFalse)
+	} else {
+		l.emit(tokenIdentifier)
+	}
 	return initialState
 }
 
