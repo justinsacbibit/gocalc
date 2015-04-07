@@ -2,6 +2,7 @@ package gocalc
 
 import (
 	"fmt"
+	"os"
 	"testing"
 )
 
@@ -71,7 +72,9 @@ func TestParse(t *testing.T) {
 	p := newParser("-----------1")
 	e := p.parseExpr()
 	if e != nil {
-		// e.accept(newPrinter())
+		s := newSerializer()
+		e.accept(s)
+		s.serialize(os.Stdout)
 	} else {
 		fmt.Println(p.error)
 	}
