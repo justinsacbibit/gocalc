@@ -182,7 +182,7 @@ func allTests() []resolverExpressionTest {
 	return r
 }
 
-func TestExpression(t *testing.T) {
+func TestExpressionEvaluation(t *testing.T) {
 	for _, test := range allTests() {
 		e, err := NewExpr(test.expr)
 		if err != nil {
@@ -214,3 +214,38 @@ func TestExpression(t *testing.T) {
 		}
 	}
 }
+
+func TestCountMallocs(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping malloc count in short mode")
+	}
+
+	s := "1"
+	mallocs := testing.AllocsPerRun(100, func() {
+		NewExpr(s)
+	})
+
+	t.Logf("%v: got %v mallocs", "1", mallocs)
+}
+
+func BenchmarkConstantExpressionCompilation(b *testing.B) {
+	s := "((((1) + (2) - (3) & (4)) * (5) / (1.)) >= (2)) && ((((5) - (4) * (3)) / (2)) <= (1))"
+	for i := 0; i < b.N; i++ {
+		NewExpr(s)
+	}
+}
+
+func BenchmarkConstantExpressionEvaluation(b *testing.B) {
+	s := "((((1) + (2) - (3) & (4)) * (5) / (1.)) >= (2)) && ((((5) - (4) * (3)) / (2)) <= (1))"
+	e, _ := NewExpr(s)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		e.Evaluate(nil, nil)
+	}
+}
+
+// func BenchmarkParamExpression(b *testing.B) {
+// 	s := "((((1) + (2) - (3) & (4)) * (5) / (1.)) >= (2)) && ((((5) - (4) * (3)) / (2)) <= (1))"
+// 	for i := 0; i < b.N; i++ {
+// 	}
+// }

@@ -5,14 +5,14 @@ import (
 	"strconv"
 )
 
-func newParser(expr string) *parser {
+func newParser(l lexer) *parser {
 	return &parser{
-		lexer: newLexer(expr),
+		lexer: l,
 	}
 }
 
 type parser struct {
-	lexer *gocalcLexer
+	lexer lexer
 	error string
 }
 

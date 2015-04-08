@@ -14,7 +14,8 @@ type Expression struct {
 // representation, or an error if compilation failed.
 //
 func NewExpr(expr string) (*Expression, error) {
-	p := newParser(expr)
+	l := newLexer(expr)
+	p := newParser(l)
 	t := p.parseExpr()
 	if t == nil {
 		return nil, CompileError(p.error)

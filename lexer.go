@@ -6,7 +6,12 @@ import (
 	"unicode/utf8"
 )
 
-func newLexer(input string) *gocalcLexer {
+type lexer interface {
+	token() *token
+	peekToken() *token
+}
+
+func newLexer(input string) lexer {
 	return &gocalcLexer{
 		input:  input,
 		state:  initialState,

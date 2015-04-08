@@ -107,6 +107,17 @@ func TestLexMultipleTokens(t *testing.T) {
 	}
 }
 
+func BenchmarkLexConstantExpression(b *testing.B) {
+	s := "((((1) + (2) - (3) & (4)) * (5) / (1.)) >= (2)) && ((((5) - (4) * (3)) / (2)) <= (1))"
+	for i := 0; i < b.N; i++ {
+		l := newLexer(s)
+		t := l.token()
+		for t.typ != tokenEOF {
+			t = l.token()
+		}
+	}
+}
+
 // Helpers
 
 func shouldLex(test lexerMultipleTokenTest, t *testing.T) {
