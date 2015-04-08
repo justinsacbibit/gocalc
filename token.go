@@ -2,6 +2,8 @@ package gocalc
 
 import "fmt"
 
+//go:generate stringer -type=tokenType
+
 type tokenType int
 
 const (
@@ -63,8 +65,6 @@ func (t token) String() string {
 	switch t.typ {
 	case tokenEOF:
 		return "EOF"
-	case tokenError:
-		return t.val
 	}
-	return fmt.Sprintf("%s", t.val)
+	return fmt.Sprintf("%v", t.val)
 }

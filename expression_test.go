@@ -2,46 +2,46 @@ package gocalc
 
 import "testing"
 
-type testFixture struct {
+type expressionTest struct {
 	ok     bool
 	expr   string
 	expect interface{}
 }
 
-var logicalOrTests = []testFixture{
+var tests = []expressionTest{
+	// Logical or
 	{true, "1 < 0 || 2 < 1", false},
 	{true, "1 > 0 || 2 < 1", true},
 	{true, "1 > 0 || 2 > 1", true},
 	{false, "9 || 10", nil},
 	{false, "3.5 || -1", nil},
-}
 
-var logicalAndTests = []testFixture{}
-
-var tests = [][]testFixture{
-	logicalOrTests,
-	logicalAndTests,
+	// Unary
+	{true, "-1", -1},
 }
 
 func TestExpression(t *testing.T) {
-	for _, testGroup := range tests {
-		for _, fixture := range testGroup {
-			e, err := NewExpr(fixture.expr)
-			if err != nil {
-				t.Errorf("Cannot test expression; lexer or parser error: %v", err)
-				continue
-			}
+	for _, test := range tests {
+		e, err := NewExpr(test.expr)
+		if err != nil {
+			t.Errorf("Expression \"%v\": Cannot test; lexer or parser error: %v", test.expr, err)
+			continue
+		}
 
-			res, err := e.Evaluate(nil, nil)
-			if fixture.ok && err != nil {
-				t.Errorf("Expression evaluation failed with error: %v, expected result: %v",
-					err, fixture.expect)
-			} else if fixture.ok && fixture.expect != res {
-				t.Errorf("Expression evaluation returned %v, expected %v",
-					res, fixture.expect)
-			} else if !fixture.ok && err == nil {
-				t.Errorf("Expression evaluation passed but should have failed")
-			}
+		switch r := test.expect.(type) {
+		case int:
+			test.expect = int64(r)
+		}
+
+		res, err := e.Evaluate(nil, nil)
+		if test.ok && err != nil {
+			t.Errorf("Expression \"%v\": Evaluation failed with error: %v, expected result: %v",
+				test.expr, err, test.expect)
+		} else if test.ok && test.expect != res {
+			t.Errorf("Expression \"%v\": Evaluation returned %v (%T), expected %v (%T)",
+				test.expr, res, res, test.expect, test.expect)
+		} else if !test.ok && err == nil {
+			t.Errorf("Expression \"%v\": Evaluation passed but should have failed", test.expr)
 		}
 	}
 }

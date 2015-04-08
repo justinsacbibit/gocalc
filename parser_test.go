@@ -1,9 +1,74 @@
 package gocalc
 
-import (
-	"fmt"
-	"testing"
-)
+import "testing"
+
+var parserTests = []struct {
+	ok   bool
+	expr string
+}{
+	// Values
+	{true, "3"},
+	{true, "5.5"},
+	{true, "true"},
+	{true, "false"},
+	{false, "0x"},
+	{false, "0a"},
+
+	// Functions
+	{true, "f()"},
+	{true, "f(x)"},
+	{true, "f(x, y)"},
+	{false, "f("},
+	{false, "f(,)"},
+	{false, "f(1,)"},
+	{false, "g(a,)"},
+	{false, "f("},
+	{false, "f(1,"},
+
+	// Unary
+	{true, "-9"},
+	{true, "++1"},
+	{true, "--1"},
+	{true, "!true"},
+	{true, "~3"},
+	{false, "1++"},
+
+	// Binary
+	{true, "a || b"},
+	{true, "a && b"},
+	{true, "2 | 4"},
+	{true, "9 ^ 10"},
+	{true, "4 & 4"},
+	{true, "4 = 5"},
+	{true, "9 != 2"},
+	{true, "2 < 4"},
+	{true, "1 <= 0"},
+	{true, "5 > 8"},
+	{true, "53>=1"},
+	{true, "a>>b"},
+	{true, "b<<a"},
+	{true, "9 + 10"},
+	{true, "4 - 7"},
+	{true, "4 * 7 "},
+	{true, "1 / 0"},
+	{true, "3 % 2"},
+	{false, "1 + 1 1"},
+	{false, "4 5 + 1"},
+
+	// Parenthesized
+	{true, "(7)"},
+	{false, "(1 + 2"},
+}
+
+func TestParse(t *testing.T) {
+	for _, test := range parserTests {
+		if test.ok {
+			shouldParse(test.expr, t)
+		} else {
+			shouldFail(test.expr, t)
+		}
+	}
+}
 
 func shouldParse(s string, t *testing.T) {
 	p := newParser(s)
@@ -19,62 +84,14 @@ func shouldFail(s string, t *testing.T) {
 	}
 }
 
-func TestParseNumber(t *testing.T) {
-	shouldParse("3", t)
-}
-
-func TestParseBadFunction(t *testing.T) {
-	shouldFail("f(", t)
-}
-
-func TestParseBadFunctionComma(t *testing.T) {
-	shouldFail("f(,)", t)
-}
-
-func TestParseBadFunctionExprComma(t *testing.T) {
-	shouldFail("f(1,)", t)
-}
-
-func TestParseSimpleFunction(t *testing.T) {
-	shouldParse("f()", t)
-}
-
-func TestParseFunctionSingleArgument(t *testing.T) {
-	shouldParse("f(x)", t)
-}
-
-func TestParseFunctionMultipleArguments(t *testing.T) {
-	shouldParse("f(x, y)", t)
-}
-
-func TestParseDoubleBinary(t *testing.T) {
-	shouldFail("1++", t)
-}
-
-func TestParseDoubleUnaryPlus(t *testing.T) {
-	shouldParse("++1", t)
-}
-
-func TestParseDoubleUnaryMinus(t *testing.T) {
-	shouldParse("--1", t)
-}
-
-func TestParseTrue(t *testing.T) {
-	shouldParse("true", t)
-}
-
-func TestParseFalse(t *testing.T) {
-	shouldParse("false", t)
-}
-
-func TestParse(t *testing.T) {
-	p := newParser("-----------1")
-	e := p.parseExpr()
-	if e != nil {
-		// s := newSerializer()
-		// e.accept(s)
-		// s.serialize(os.Stdout)
-	} else {
-		fmt.Println(p.error)
-	}
-}
+// func TestParse(t *testing.T) {
+// 	p := newParser("-----------1")
+// 	e := p.parseExpr()
+// 	if e != nil {
+// 		s := newSerializer()
+// 		e.accept(s)
+// 		s.serialize(os.Stdout)
+// 	} else {
+// 		fmt.Println(p.error)
+// 	}
+// }

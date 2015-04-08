@@ -170,29 +170,97 @@ func lexOr(l *gocalcLexer) stateFn {
 }
 
 func lexNumber(l *gocalcLexer) stateFn {
-	var digits string
-	typ := tokenInt
 	if l.accept("0") {
-		if l.accept("x") {
-			digits = l.alpha[0:22]
-		} else if l.accept("b") {
-			digits = l.alpha[0:2]
-		} else {
-			digits = l.alpha[0:8]
-		}
-	} else {
-		digits = l.alpha[0:10]
+		return lexZero
 	}
-	l.acceptRun(digits)
+
+	l.acceptRun(l.alpha[0:10])
 	if l.accept(".") {
-		typ = tokenFloat
-		l.acceptRun(digits)
+		return lexFloat
 	}
-	if r := l.peek(); (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
-		return l.errorf("bad number syntax: %q", l.input[l.start:l.pos])
+	if isAlpha(l.peek()) {
+		return lexNumberError
 	}
-	l.emit(typ)
+	l.emit(tokenInt)
 	return initialState
+}
+
+func lexZero(l *gocalcLexer) stateFn {
+	if l.accept("x") {
+		return lexHex
+	} else if l.accept("b") {
+		return lexBinary
+	} else if l.accept(".") {
+		return lexFloat
+	} else if l.accept(l.alpha[0:8]) {
+		l.backup()
+		return lexOctal
+	}
+
+	if r := l.peek(); isAlpha(r) || r >= '0' && r <= '9' {
+		return lexNumberError
+	}
+
+	l.emit(tokenInt)
+	return initialState
+}
+
+func lexFloat(l *gocalcLexer) stateFn {
+	l.acceptRun(l.alpha[0:10])
+
+	if isAlpha(l.peek()) {
+		return lexNumberError
+	}
+
+	l.emit(tokenFloat)
+	return initialState
+}
+
+func lexOctal(l *gocalcLexer) stateFn {
+	if !l.acceptRun(l.alpha[0:8]) {
+		return lexNumberError
+	}
+
+	if isAlpha(l.peek()) {
+		return lexNumberError
+	}
+
+	l.emit(tokenInt)
+	return initialState
+}
+
+func lexBinary(l *gocalcLexer) stateFn {
+	if !l.acceptRun(l.alpha[0:2]) {
+		return lexNumberError
+	}
+
+	if isAlpha(l.peek()) {
+		return lexNumberError
+	}
+
+	l.emit(tokenInt)
+	return initialState
+}
+
+func lexHex(l *gocalcLexer) stateFn {
+	if !l.acceptRun(l.alpha[0:22]) {
+		return lexNumberError
+	}
+
+	if isAlpha(l.peek()) {
+		return lexNumberError(l)
+	}
+
+	l.emit(tokenInt)
+	return initialState
+}
+
+func isAlpha(r rune) bool {
+	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')
+}
+
+func lexNumberError(l *gocalcLexer) stateFn {
+	return l.errorf("bad number syntax: %q", l.input[l.start:l.pos])
 }
 
 func lexIdentifier(l *gocalcLexer) stateFn {
@@ -231,10 +299,13 @@ func (l *gocalcLexer) accept(valid string) bool {
 	return false
 }
 
-func (l *gocalcLexer) acceptRun(valid string) {
+func (l *gocalcLexer) acceptRun(valid string) bool {
+	r := false
 	for strings.IndexRune(valid, l.next()) >= 0 {
+		r = true
 	}
 	l.backup()
+	return r
 }
 
 func (l *gocalcLexer) backup() {
