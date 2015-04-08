@@ -246,7 +246,7 @@ func lexHex(l *gocalcLexer) stateFn {
 	}
 
 	if isAlpha(l.peek()) {
-		return lexNumberError(l)
+		return lexNumberError
 	}
 
 	l.emit(tokenInt)
