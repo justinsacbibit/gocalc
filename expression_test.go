@@ -9,6 +9,10 @@ type expressionTest struct {
 }
 
 var tests = []expressionTest{
+	// Compilation errors
+	{false, "@#$", nil},
+	{false, "1<", nil},
+
 	// Logical or
 	{true, "1 < 0 || 2 < 1", false},
 	{true, "1 > 0 || 2 < 1", true},
@@ -24,7 +28,12 @@ func TestExpression(t *testing.T) {
 	for _, test := range tests {
 		e, err := NewExpr(test.expr)
 		if err != nil {
-			t.Errorf("Expression \"%v\": Cannot test; lexer or parser error: %v", test.expr, err)
+			if test.ok {
+				t.Errorf("Expression \"%v\": Cannot test; lexer or parser error: %v", test.expr, err)
+			} else {
+				t.Log(err.Error())
+			}
+
 			continue
 		}
 
