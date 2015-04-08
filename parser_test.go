@@ -1,9 +1,6 @@
 package gocalc
 
-import (
-	"fmt"
-	"testing"
-)
+import "testing"
 
 var parserTests = []struct {
 	ok   bool
@@ -74,7 +71,7 @@ func TestParse(t *testing.T) {
 }
 
 type mockLexer struct {
-	cur    int
+	cur    int // index of current token
 	tokens []*token
 }
 
@@ -88,35 +85,32 @@ func (m *mockLexer) peekToken() *token {
 	return m.tokens[m.cur]
 }
 
+func (m *mockLexer) reset() {
+	m.cur = 0
+}
+
+func newMockLexer(expr string) *mockLexer {
+	l := &mockLexer{}
+
+	// Use gocalcLexer to fill mockLexer's token buffer
+	rl := newLexer(expr)
+	for {
+		t := rl.token()
+		l.tokens = append(l.tokens, t)
+		if t.typ == tokenEOF {
+			break
+		}
+	}
+	return l
+}
+
 func BenchmarkParseConstantExpression(b *testing.B) {
-	lp := &token{tokenLeftParen, "("}
-	rp := &token{tokenRightParen, ")"}
-	in := func(i int) *token {
-		return &token{tokenInt, fmt.Sprintf("%d", i)}
-	}
-	pl := &token{tokenPlus, "+"}
-	mi := &token{tokenMinus, "-"}
-	st := &token{tokenStar, "*"}
-	sl := &token{tokenSlash, "/"}
-	fl := func(f float64) *token {
-		return &token{tokenFloat, fmt.Sprintf("%f", f)}
-	}
-	ba := &token{tokenBitwiseAnd, "&"}
-	ge := &token{tokenGreaterOrEqual, ">="}
-	la := &token{tokenLogicalAnd, "&&"}
-	le := &token{tokenLessOrEqual, "<="}
-	eo := &token{tokenEOF, ""}
-	// s := "((((1) + (2) - (3) & (4)) * (5) / (1.)) >= (2)) && ((((5) - (4) * (3)) / (2)) <= (1))"
-	l := &mockLexer{tokens: []*token{
-		lp, lp, lp, lp, in(1), rp, pl, lp, in(2), rp, mi, lp, in(3), rp, ba, lp, in(4), rp, rp, st, lp, in(5),
-		rp, sl, lp, fl(1.0), rp, rp, ge, lp, in(2), rp, rp, la, lp, lp, lp, lp, in(5), rp, mi, lp, in(4), rp,
-		st, lp, in(3), rp, rp, sl, lp, in(2), rp, rp, le, lp, in(1), rp, rp, eo,
-	}}
+	l := newMockLexer("((((1) + (2) - (3) & (4)) * (5) / (1.)) >= (2)) && ((((5) - (4) * (3)) / (2)) <= (1))")
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		p := newParser(l)
 		p.parseExpr()
-		l.cur = 0
+		l.reset()
 	}
 }
 
