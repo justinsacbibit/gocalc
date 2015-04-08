@@ -29,6 +29,7 @@ var lexerSingleTokenTests = []lexerSingleTokenTest{
 	{true, "0b10", tokenInt, "0b10"},
 	{false, "0b3", tokenError, ""},
 	{false, "0b", tokenError, ""},
+	{false, "0b1g", tokenError, ""},
 	{true, "077", tokenInt, "077"},
 	{false, "08", tokenError, ""},
 	{true, "0", tokenInt, "0"},

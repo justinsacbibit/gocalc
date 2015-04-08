@@ -270,21 +270,15 @@ func (e *evaluator) visitBinaryExpr(b *binaryExpr) {
 	}
 }
 
-func createFunc(e *evaluator, arg expr) func() (interface{}, error) {
-	return func() (param interface{}, err error) {
-		defer func() {
-			if r := recover(); r != nil {
-				param = nil
-				err = r.(EvaluationError)
-			}
-		}()
-		return e.evaluate(arg), nil
+func createFunc(e *evaluator, arg expr) func() interface{} {
+	return func() interface{} {
+		return e.evaluate(arg)
 	}
 }
 
-func (e *evaluator) mapLazy(args []expr) []func() (interface{}, error) {
+func (e *evaluator) mapLazy(args []expr) []func() interface{} {
 	l := len(args)
-	r := make([]func() (interface{}, error), l, l)
+	r := make([]func() interface{}, l, l)
 	for i, arg := range args {
 		r[i] = createFunc(e, arg)
 	}
@@ -296,10 +290,9 @@ func (e *evaluator) visitFuncExpr(f *funcExpr) {
 		res, err := e.funcHandler(f.function, e.mapLazy(f.args)...)
 		if err != nil {
 			panic(err)
-		} else {
+		} else if res != nil {
 			e.result = res
 		}
-		return
 	}
 
 	switch f.function {

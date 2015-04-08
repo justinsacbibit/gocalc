@@ -33,7 +33,7 @@ type ParamResolver func(string) interface{}
 // FuncHandler handles evaluates a function within an Expression, given
 // parameters (which are wrapped in a function for lazy evaluation).
 //
-type FuncHandler func(string, ...func() (interface{}, error)) (interface{}, error)
+type FuncHandler func(string, ...func() interface{}) (interface{}, error)
 
 // Evaluate evaluates an Expression. If any parameters or function are found,
 // Evaluate will call the appropriate resolver. The evaluation result is

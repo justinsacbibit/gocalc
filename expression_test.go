@@ -1,11 +1,20 @@
 package gocalc
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 type expressionTest struct {
 	ok     bool
 	expr   string
 	expect interface{}
+}
+
+type resolverExpressionTest struct {
+	expressionTest
+	p ParamResolver
+	f FuncHandler
 }
 
 var tests = []expressionTest{
@@ -135,6 +144,34 @@ var tests = []expressionTest{
 
 	// Negative
 	{true, "-1", -1},
+}
+
+var resolverTests = []resolverExpressionTest{
+	{expressionTest{true, "a", 5}, func(s string) interface{} {
+		if s == "a" {
+			return 5
+		}
+
+		return nil
+	}, nil},
+
+	{expressionTest{true, "abs(-2)", 2}, nil, nil},
+
+	{expressionTest{true, "abs(-3)", 3}, nil, func(f string, args ...func() interface{}) (interface{}, error) {
+		return nil, nil
+	}},
+
+	{expressionTest{true, "add(1, 2)", 3}, nil, func(f string, args ...func() interface{}) (interface{}, error) {
+		if f == "add" {
+			if l := len(args); l != 2 {
+				return nil, EvaluationError(fmt.Sprintf("add takes two param, got %d", l))
+			}
+
+			return args[0]().(int64) + args[1]().(int64), nil
+		}
+
+		return nil, nil
+	}},
 }
 
 func TestExpression(t *testing.T) {
