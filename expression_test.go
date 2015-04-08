@@ -12,6 +12,12 @@ var tests = []expressionTest{
 	// Compilation errors
 	{false, "@#$", nil},
 	{false, "1<", nil},
+	{false, "f(a a", nil},
+	{false, "1.0a", nil},
+	{false, "0d", nil},
+	{false, "07c", nil},
+	{false, "0bb", nil},
+	{false, "0xabcg", nil},
 
 	// Logical or
 	{true, "1 < 0 || 2 < 1", false},

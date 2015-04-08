@@ -217,9 +217,7 @@ func lexFloat(l *gocalcLexer) stateFn {
 }
 
 func lexOctal(l *gocalcLexer) stateFn {
-	if !l.acceptRun(l.alpha[0:8]) {
-		return lexNumberError
-	}
+	l.acceptRun(l.alpha[0:8])
 
 	if isAlpha(l.peek()) {
 		return lexNumberError
