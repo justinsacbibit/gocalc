@@ -81,7 +81,7 @@ func (e *evaluator) visitBinaryExpr(b *binaryExpr) {
 		case int64:
 			switch r := right.(type) {
 			case int64:
-				e.result = l & r
+				e.result = l ^ r
 			}
 		}
 	case tokenEqual:
