@@ -1,6 +1,9 @@
 package gocalc
 
-import "fmt"
+import (
+	"fmt"
+	"runtime"
+)
 
 type evaluator struct {
 	result        interface{}
@@ -16,6 +19,17 @@ func newEvaluator(p ParamResolver, f FuncHandler) *evaluator {
 }
 
 func (e *evaluator) evaluate(t expr) interface{} {
+	defer func() {
+		if r := recover(); r != nil {
+			switch err := r.(type) {
+			case runtime.TypeAssertionError:
+				panic(EvaluationError(err.Error()))
+			default:
+				panic(r)
+			}
+		}
+	}()
+
 	t.accept(e)
 	return e.result
 }
@@ -292,6 +306,7 @@ func (e *evaluator) visitFuncExpr(f *funcExpr) {
 			panic(err)
 		} else if res != nil {
 			e.result = res
+			return
 		}
 	}
 
@@ -303,8 +318,15 @@ func (e *evaluator) visitFuncExpr(f *funcExpr) {
 		}
 
 		r := e.evaluate(f.args[0])
-		if f := r.(float64); f < 0 {
-			e.result = -f
+		switch f := r.(type) {
+		case int64:
+			if f < 0 {
+				e.result = -f
+			}
+		case float64:
+			if f < 0 {
+				e.result = -f
+			}
 		}
 	default:
 		e.error("Unrecognized function %s", f.function)

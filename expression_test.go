@@ -116,26 +116,26 @@ var tests = []expressionTest{
 	// Plus
 	{true, "9 + 10", 19},
 	{true, "5.0 + 10", 15.0},
-	{true, "1.0 + 4", 5.0},
+	{true, "1 + 4.0", 5.0},
 	{true, "5.0 + 15.0", 20.0},
 
 	// Minus
 	{true, "9 - 10", -1},
 	{true, "5.0 - 10", -5.0},
-	{true, "1.0 - 4", -3.0},
+	{true, "1 - 4.0", -3.0},
 	{true, "5.0 - 15.0", -10.0},
 
 	// Star
 	{true, "9 * 10", 90},
 	{true, "5.0 * 10", 50.0},
-	{true, "1.0 * 4", 4.0},
+	{true, "1 * 4.0", 4.0},
 	{true, "5.0 * 15.0", 75.0},
 
 	// Slash
 	{true, "3 / 2", 1},
 	{true, "5.0 / 10", 0.5},
-	{true, "1.0 / 4", 0.25},
-	{true, "4 / 2", 2},
+	{true, "1 / 4.0", 0.25},
+	{true, "4.0 / 2.0", 2.0},
 
 	// Percent
 	{true, "5 % 3", 2},
@@ -149,7 +149,7 @@ var tests = []expressionTest{
 var resolverTests = []resolverExpressionTest{
 	{expressionTest{true, "a", 5}, func(s string) interface{} {
 		if s == "a" {
-			return 5
+			return int64(5)
 		}
 
 		return nil
@@ -174,8 +174,16 @@ var resolverTests = []resolverExpressionTest{
 	}},
 }
 
-func TestExpression(t *testing.T) {
+func allTests() []resolverExpressionTest {
+	r := resolverTests
 	for _, test := range tests {
+		r = append(r, resolverExpressionTest{test, nil, nil})
+	}
+	return r
+}
+
+func TestExpression(t *testing.T) {
+	for _, test := range allTests() {
 		e, err := NewExpr(test.expr)
 		if err != nil {
 			if test.ok {
@@ -192,7 +200,7 @@ func TestExpression(t *testing.T) {
 			test.expect = int64(r)
 		}
 
-		res, err := e.Evaluate(nil, nil)
+		res, err := e.Evaluate(test.p, test.f)
 		if test.ok && err != nil {
 			t.Errorf("Expression \"%v\": Evaluation failed with error: %v, expected result: %v",
 				test.expr, err, test.expect)
