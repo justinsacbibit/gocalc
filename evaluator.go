@@ -301,10 +301,10 @@ func (e *evaluator) mapLazy(args []expr) []func() interface{} {
 
 func (e *evaluator) visitFuncExpr(f *funcExpr) {
 	if e.funcHandler != nil {
-		res, err := e.funcHandler(f.function, e.mapLazy(f.args)...)
+		res, err, handled := e.funcHandler(f.function, e.mapLazy(f.args)...)
 		if err != nil {
 			panic(err)
-		} else if res != nil {
+		} else if handled {
 			e.result = res
 			return
 		}

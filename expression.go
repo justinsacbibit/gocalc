@@ -34,10 +34,7 @@ type ParamResolver func(string) (value interface{})
 // FuncHandler handles evaluates a function within an Expression, given
 // parameters (which are wrapped in a function for lazy evaluation).
 //
-// TODO: Add a boolean to the return values, to indicate whether the function
-// was handled. A non-nil result value is currently used to determine this, but
-// nil result values should be allowed.
-type FuncHandler func(string, ...func() interface{}) (interface{}, error)
+type FuncHandler func(string, ...func() interface{}) (result interface{}, err error, handled bool)
 
 // Evaluate evaluates an Expression. If any parameters or function are found,
 // Evaluate will call the appropriate resolver. The evaluation result is

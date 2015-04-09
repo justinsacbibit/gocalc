@@ -157,20 +157,20 @@ var resolverTests = []resolverExpressionTest{
 
 	{expressionTest{true, "abs(-2)", 2}, nil, nil},
 
-	{expressionTest{true, "abs(-3)", 3}, nil, func(f string, args ...func() interface{}) (interface{}, error) {
-		return nil, nil
+	{expressionTest{true, "abs(-3)", 3}, nil, func(f string, args ...func() interface{}) (interface{}, error, bool) {
+		return nil, nil, false
 	}},
 
-	{expressionTest{true, "add(1, 2)", 3}, nil, func(f string, args ...func() interface{}) (interface{}, error) {
+	{expressionTest{true, "add(1, 2)", 3}, nil, func(f string, args ...func() interface{}) (interface{}, error, bool) {
 		if f == "add" {
 			if l := len(args); l != 2 {
-				return nil, EvaluationError(fmt.Sprintf("add takes two param, got %d", l))
+				return nil, EvaluationError(fmt.Sprintf("add takes two param, got %d", l)), false
 			}
 
-			return args[0]().(int64) + args[1]().(int64), nil
+			return args[0]().(int64) + args[1]().(int64), nil, true
 		}
 
-		return nil, nil
+		return nil, nil, false
 	}},
 }
 
