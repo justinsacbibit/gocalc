@@ -107,6 +107,21 @@ func TestLexMultipleTokens(t *testing.T) {
 	}
 }
 
+func TestLexCountMallocs(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping malloc count in short mode")
+	}
+
+	s := "((((1) + (2) - (3) & (4)) * (5) / (1.)) >= (2)) && ((((5) - (4) * (3)) / (2)) <= (1))"
+	mallocs := testing.AllocsPerRun(100, func() {
+		l := newLexer(s)
+		for l.token().typ != tokenEOF {
+		}
+	})
+
+	t.Logf("Expression \"%v\": got %v mallocs", s, mallocs)
+}
+
 func BenchmarkLexConstantExpression(b *testing.B) {
 	s := "((((1) + (2) - (3) & (4)) * (5) / (1.)) >= (2)) && ((((5) - (4) * (3)) / (2)) <= (1))"
 	for i := 0; i < b.N; i++ {

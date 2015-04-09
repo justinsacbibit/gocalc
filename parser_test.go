@@ -114,6 +114,22 @@ func BenchmarkParseConstantExpression(b *testing.B) {
 	}
 }
 
+func TestParserCountMallocs(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping malloc count in short mode")
+	}
+
+	s := "((((1) + (2) - (3) & (4)) * (5) / (1.)) >= (2)) && ((((5) - (4) * (3)) / (2)) <= (1))"
+	l := newMockLexer(s)
+	mallocs := testing.AllocsPerRun(100, func() {
+		p := newParser(l)
+		p.parseExpr()
+		l.reset()
+	})
+
+	t.Logf("Expression \"%v\": got %v mallocs", s, mallocs)
+}
+
 func shouldParse(s string, t *testing.T) {
 	p := newParser(newLexer(s))
 	if e := p.parseExpr(); e == nil {

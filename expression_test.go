@@ -220,12 +220,12 @@ func TestCountMallocs(t *testing.T) {
 		t.Skip("Skipping malloc count in short mode")
 	}
 
-	s := "1"
+	s := "((((1) + (2) - (3) & (4)) * (5) / (1.)) >= (2)) && ((((5) - (4) * (3)) / (2)) <= (1))"
 	mallocs := testing.AllocsPerRun(100, func() {
 		NewExpr(s)
 	})
 
-	t.Logf("%v: got %v mallocs", "1", mallocs)
+	t.Logf("Expression \"%v\": got %v mallocs", s, mallocs)
 }
 
 func BenchmarkConstantExpressionCompilation(b *testing.B) {
