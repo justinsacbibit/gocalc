@@ -210,7 +210,7 @@ func TestExpressionEvaluation(t *testing.T) {
 		} else if !test.ok && err == nil {
 			t.Errorf("Expression \"%v\": Evaluation passed but should have failed", test.expr)
 		} else if !test.ok {
-			t.Log("Logging expected evaluation error: \"%v\"", err.Error())
+			t.Logf("Logging expected evaluation error: \"%v\"", err.Error())
 		}
 	}
 }
