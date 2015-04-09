@@ -244,8 +244,21 @@ func BenchmarkConstantExpressionEvaluation(b *testing.B) {
 	}
 }
 
-// func BenchmarkParamExpression(b *testing.B) {
-// 	s := "((((1) + (2) - (3) & (4)) * (5) / (1.)) >= (2)) && ((((5) - (4) * (3)) / (2)) <= (1))"
-// 	for i := 0; i < b.N; i++ {
-// 	}
-// }
+func BenchmarkParamExpressionEvaluation(b *testing.B) {
+	s := "((((a) + (b) - (c) & (d)) * (e) / (1.)) >= (2)) && ((((5) - (4) * (3)) / (2)) <= (1))"
+	m := map[string]interface{}{
+		"a": 1,
+		"b": 2,
+		"c": 3,
+		"d": 4,
+		"e": 5,
+	}
+	r := func(p string) interface{} {
+		return m[p]
+	}
+	e, _ := NewExpr(s)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		e.Evaluate(r, nil)
+	}
+}
