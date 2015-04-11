@@ -19,10 +19,12 @@ type lexerMultipleTokenTest struct {
 var lexerSingleTokenTests = []lexerSingleTokenTest{
 	{true, "1", tokenInt, "1"},
 	{true, "111", tokenInt, "111"},
+	{true, "123456789", tokenInt, "123456789"},
 	{true, "  5", tokenInt, "5"},
 	{true, "  99  ", tokenInt, "99"},
 
 	{true, "1.2", tokenFloat, "1.2"},
+	{true, "22.3123445", tokenFloat, "22.3123445"},
 	{true, "0.5", tokenFloat, "0.5"},
 	{true, "0xF", tokenInt, "0xF"},
 	{false, "0xG", tokenError, ""},
@@ -143,17 +145,17 @@ func shouldLex(test lexerMultipleTokenTest, t *testing.T) {
 	for i, e := range ts {
 		to := l.token()
 		if to.typ != e {
-			t.Errorf("Wrong token type: expected %v, got %v", e, to.typ)
+			t.Errorf("Wrong token type for input \"%v\": expected %v, got %v", s, e, to.typ)
 		}
 		if v != nil {
 			ev := v[i]
 			if ev != "" && to.val != ev {
-				t.Errorf("Wrong token value: expected %v, got %v", ev, to.val)
+				t.Errorf("Wrong token value for input \"%v\": expected %v, got %v", s, ev, to.val)
 			}
 		}
 	}
 	if typ := l.token().typ; typ != tokenEOF {
-		t.Errorf("Expected EOF, got %s", typ)
+		t.Errorf("Expected EOF for input \"%v\", got %s", s, typ)
 	}
 }
 

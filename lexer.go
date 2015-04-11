@@ -1,52 +1,265 @@
 package gocalc
 
-import (
-	"fmt"
-	"strings"
-	"unicode/utf8"
-)
-
 type lexer interface {
 	token() *token
 	peekToken() *token
 }
 
+type state int
+
+const (
+	stErr state = iota
+	stStart
+	stWhitespace
+	stId
+	stInt
+	stZero
+	stZeroB
+	stBinInt
+	stZeroX
+	stHexInt
+	stOctInt
+	stFloat
+	stLparen
+	stRparen
+	stComma
+	stLogicalNot
+	stNotEqual
+	stBitwiseNot
+	stStar
+	stPercent
+	stSlash
+	stPlus
+	stMinus
+	stLeftShift
+	stRightShift
+	stLessThan
+	stLessOrEqual
+	stGreaterThan
+	stGreaterOrEqual
+	stEqual
+	stBitwiseAnd
+	stLogicalAnd
+	stBitwiseXor
+	stBitwiseOr
+	stLogicalOr
+	stT
+	stTr
+	stTru
+	stTrue
+	stF
+	stFa
+	stFal
+	stFals
+	stFalse
+)
+
+const whitespace = "\t\n\r "
+const letters = "abcdefABCDEFghijklmnopqrstuvwxyzGHIJKLMNOPQRSTUVWXYZ"
+const digits = "0123456789"
+const hexDigits = "0123456789abcdefABCDEF"
+const binaryDigits = "01"
+const octalDigits = "01234567"
+const oneToNine = "123456789"
+
+const stateCount uint8 = 44
+const maxTransitionCount uint16 = 256
+
+var trans = [stateCount][maxTransitionCount]state{}
+var inited = false
+
+var stateTokens = [...]tokenType{
+	tokenError,          // stErr
+	tokenError,          // stStart
+	tokenWhitespace,     // stWhitespace
+	tokenIdentifier,     // stId
+	tokenInt,            // stInt
+	tokenInt,            // stZero
+	tokenError,          // stZeroB
+	tokenInt,            // stBinInt
+	tokenError,          // stZeroX
+	tokenInt,            // stHexInt
+	tokenInt,            // stOctInt
+	tokenFloat,          // stFloat
+	tokenLeftParen,      // stLparen
+	tokenRightParen,     // stRparen
+	tokenComma,          // stComma
+	tokenLogicalNot,     // stLogicalNot
+	tokenNotEqual,       // stNotEqual
+	tokenBitwiseNot,     // stBitwiseNot
+	tokenStar,           // stStar
+	tokenPercent,        // stPercent
+	tokenSlash,          // stSlash
+	tokenPlus,           // stPlus
+	tokenMinus,          // stMinus
+	tokenLeftShift,      // stLeftShift
+	tokenRightShift,     // stRightShift
+	tokenLessThan,       // stLessThan
+	tokenLessOrEqual,    // stLessOrEqual
+	tokenGreaterThan,    // stGreaterThan
+	tokenGreaterOrEqual, // stGreaterOrEqual
+	tokenEqual,          // stEqual
+	tokenBitwiseAnd,     // stBitwiseAnd
+	tokenLogicalAnd,     // stLogicalAnd
+	tokenBitwiseXor,     // stBitwiseXor
+	tokenBitwiseOr,      // stBitwiseOr
+	tokenLogicalOr,      // stLogicalOr
+	tokenIdentifier,     // stT
+	tokenIdentifier,     // stTr
+	tokenIdentifier,     // stTru
+	tokenTrue,           // stTrue
+	tokenIdentifier,     // stF
+	tokenIdentifier,     // stFa
+	tokenIdentifier,     // stFal
+	tokenIdentifier,     // stFals
+	tokenFalse,          // stFalse
+}
+
+func setTrans(current state, transition string, next state) {
+	for _, r := range transition {
+		trans[current][r] = next
+	}
+}
+
+func initTransitions() {
+	inited = true
+
+	setTrans(stStart, whitespace, stWhitespace)
+	setTrans(stWhitespace, whitespace, stWhitespace)
+
+	// Single character tokens
+	setTrans(stStart, "(", stLparen)
+	setTrans(stStart, ")", stRparen)
+	setTrans(stStart, ",", stComma)
+	setTrans(stStart, "~", stBitwiseNot)
+	setTrans(stStart, "*", stStar)
+	setTrans(stStart, "%", stPercent)
+	setTrans(stStart, "/", stSlash)
+	setTrans(stStart, "+", stPlus)
+	setTrans(stStart, "-", stMinus)
+	setTrans(stStart, "=", stEqual)
+
+	setTrans(stStart, letters, stId)
+	setTrans(stId, letters+digits, stId)
+
+	// Int
+	setTrans(stStart, oneToNine, stInt)
+	setTrans(stInt, digits, stInt)
+
+	// Zero
+	setTrans(stStart, "0", stZero)
+	setTrans(stZero, ".", stFloat)
+	// Binary
+	setTrans(stZero, "b", stZeroB)
+	setTrans(stZeroB, binaryDigits, stBinInt)
+	setTrans(stBinInt, binaryDigits, stBinInt)
+	// Hex
+	setTrans(stZero, "xX", stZeroX)
+	setTrans(stZeroX, hexDigits, stHexInt)
+	setTrans(stHexInt, hexDigits, stHexInt)
+	// Octal
+	setTrans(stZero, octalDigits, stOctInt)
+	setTrans(stOctInt, octalDigits, stOctInt)
+
+	// Float
+	setTrans(stInt, ".", stFloat)
+	setTrans(stFloat, digits, stFloat)
+
+	// Comparisons
+	setTrans(stStart, "!", stLogicalNot)
+	setTrans(stLogicalNot, "=", stNotEqual)
+	setTrans(stStart, "<", stLessThan)
+	setTrans(stLessThan, "=", stLessOrEqual)
+	setTrans(stStart, ">", stGreaterThan)
+	setTrans(stGreaterThan, "=", stGreaterOrEqual)
+	setTrans(stStart, "&", stBitwiseAnd)
+	setTrans(stBitwiseAnd, "&", stLogicalAnd)
+	setTrans(stStart, "^", stBitwiseXor)
+	setTrans(stStart, "|", stBitwiseOr)
+	setTrans(stBitwiseOr, "|", stLogicalOr)
+
+	// Shift
+	setTrans(stLessThan, "<", stLeftShift)
+	setTrans(stGreaterThan, ">", stRightShift)
+
+	// Boolean literals
+	setTrans(stStart, "t", stT)
+	setTrans(stT, "r", stTr)
+	setTrans(stTr, "u", stTru)
+	setTrans(stTru, "e", stTrue)
+	setTrans(stTrue, letters+digits, stId)
+
+	setTrans(stStart, "f", stF)
+	setTrans(stF, "a", stFa)
+	setTrans(stFa, "l", stFal)
+	setTrans(stFal, "s", stFals)
+	setTrans(stFals, "e", stFalse)
+	setTrans(stFalse, letters+digits, stId)
+}
+
 func newLexer(input string) lexer {
+	if !inited {
+		initTransitions()
+	}
+
 	return &gocalcLexer{
 		input:  input,
-		state:  initialState,
 		tokens: queue{},
-		alpha:  "0123456789abcdefABCDEFghijklmnopqrstuvwxyzGHIJKLMNOPQRSTUVWXYZ",
+		state:  stStart,
+	}
+}
+
+func (l *gocalcLexer) push() {
+	if len(l.input) == 0 {
+		l.emit(tokenEOF)
+		return
+	}
+
+	for len(l.tokens) < 1 {
+		nextState := stErr
+
+		if l.pos < len(l.input) {
+			nextState = trans[l.state][l.input[l.pos]]
+		}
+
+		if nextState == stErr {
+			curTokenType := stateTokens[l.state]
+			if curTokenType == tokenError {
+				l.emit(tokenError)
+				return
+			}
+
+			if curTokenType != tokenWhitespace {
+				l.emit(curTokenType)
+			}
+			l.start = l.pos
+			l.state = stStart
+
+			if l.start >= len(l.input) {
+				l.emit(tokenEOF)
+			}
+		} else {
+			l.state = nextState
+			l.pos++
+		}
 	}
 }
 
 func (l *gocalcLexer) token() *token {
-	for {
-		switch len(l.tokens) {
-		case 0:
-			l.state = l.state(l)
-		default:
-			return l.tokens.pop()
-		}
+	if len(l.tokens) < 1 {
+		l.push()
 	}
+	return l.tokens.pop()
 }
 
 func (l *gocalcLexer) peekToken() *token {
-	for {
-		switch len(l.tokens) {
-		case 0:
-			l.state = l.state(l)
-		default:
-			return l.tokens.first()
-		}
+	if len(l.tokens) < 1 {
+		l.push()
 	}
+	return l.tokens.first()
 }
 
-// mark: Internal use
-
 const eof = -1
-
-type stateFn func(*gocalcLexer) stateFn
 
 type gocalcLexer struct {
 	input  string
@@ -54,9 +267,7 @@ type gocalcLexer struct {
 	pos    int
 	width  int
 	tokens queue
-	state  stateFn
-	digits string
-	alpha  string
+	state  state
 }
 
 func (l *gocalcLexer) emit(t tokenType) {
@@ -65,267 +276,4 @@ func (l *gocalcLexer) emit(t tokenType) {
 		val: l.input[l.start:l.pos],
 	})
 	l.start = l.pos
-}
-
-func initialState(l *gocalcLexer) stateFn {
-F:
-	for {
-		r := l.next()
-		switch {
-		case r == eof:
-			break F
-		case r == ' ':
-			l.ignore()
-		case (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z'):
-			l.backup()
-			return lexIdentifier
-		case r >= '0' && r <= '9':
-			l.backup()
-			return lexNumber
-		case r == '(':
-			l.emit(tokenLeftParen)
-		case r == ')':
-			l.emit(tokenRightParen)
-		case r == ',':
-			l.emit(tokenComma)
-		case r == '!':
-			return lexExclamation
-		case r == '~':
-			l.emit(tokenBitwiseNot)
-		case r == '*':
-			l.emit(tokenStar)
-		case r == '/':
-			l.emit(tokenSlash)
-		case r == '%':
-			l.emit(tokenPercent)
-		case r == '+':
-			l.emit(tokenPlus)
-		case r == '-':
-			l.emit(tokenMinus)
-		case r == '<':
-			return lexLessThan
-		case r == '>':
-			return lexGreaterThan
-		case r == '=':
-			l.emit(tokenEqual)
-		case r == '&':
-			return lexAnd
-		case r == '^':
-			l.emit(tokenBitwiseXor)
-		case r == '|':
-			return lexOr
-		default:
-			return l.errorf("Invalid token: %c", r)
-		}
-	}
-
-	l.emit(tokenEOF)
-	return nil
-}
-
-func (l *gocalcLexer) checkNext(next rune, match tokenType, otherwise tokenType) stateFn {
-	if l.next() == next {
-		l.emit(match)
-	} else {
-		l.backup()
-		l.emit(otherwise)
-	}
-
-	return initialState
-}
-
-func lexExclamation(l *gocalcLexer) stateFn {
-	return l.checkNext('=', tokenNotEqual, tokenLogicalNot)
-}
-
-func lexLessThan(l *gocalcLexer) stateFn {
-	switch l.next() {
-	case '=':
-		l.emit(tokenLessOrEqual)
-	case '<':
-		l.emit(tokenLeftShift)
-	default:
-		l.backup()
-		l.emit(tokenLessThan)
-	}
-
-	return initialState
-}
-
-func lexGreaterThan(l *gocalcLexer) stateFn {
-	switch l.next() {
-	case '=':
-		l.emit(tokenGreaterOrEqual)
-	case '>':
-		l.emit(tokenRightShift)
-	default:
-		l.backup()
-		l.emit(tokenGreaterThan)
-	}
-
-	return initialState
-}
-
-func lexAnd(l *gocalcLexer) stateFn {
-	return l.checkNext('&', tokenLogicalAnd, tokenBitwiseAnd)
-}
-
-func lexOr(l *gocalcLexer) stateFn {
-	return l.checkNext('|', tokenLogicalOr, tokenBitwiseOr)
-}
-
-func lexNumber(l *gocalcLexer) stateFn {
-	if l.accept("0") {
-		return lexZero
-	}
-
-	l.acceptRun(l.alpha[0:10])
-	if l.accept(".") {
-		return lexFloat
-	}
-	if isAlpha(l.peek()) {
-		return lexNumberError
-	}
-	l.emit(tokenInt)
-	return initialState
-}
-
-func lexZero(l *gocalcLexer) stateFn {
-	if l.accept("x") {
-		return lexHex
-	} else if l.accept("b") {
-		return lexBinary
-	} else if l.accept(".") {
-		return lexFloat
-	} else if l.accept(l.alpha[0:8]) {
-		l.backup()
-		return lexOctal
-	}
-
-	if r := l.peek(); isAlpha(r) || r >= '0' && r <= '9' {
-		return lexNumberError
-	}
-
-	l.emit(tokenInt)
-	return initialState
-}
-
-func lexFloat(l *gocalcLexer) stateFn {
-	l.acceptRun(l.alpha[0:10])
-
-	if isAlpha(l.peek()) {
-		return lexNumberError
-	}
-
-	l.emit(tokenFloat)
-	return initialState
-}
-
-func lexOctal(l *gocalcLexer) stateFn {
-	l.acceptRun(l.alpha[0:8])
-
-	if isAlpha(l.peek()) {
-		return lexNumberError
-	}
-
-	l.emit(tokenInt)
-	return initialState
-}
-
-func lexBinary(l *gocalcLexer) stateFn {
-	if !l.acceptRun(l.alpha[0:2]) {
-		return lexNumberError
-	}
-
-	if isAlpha(l.peek()) {
-		return lexNumberError
-	}
-
-	l.emit(tokenInt)
-	return initialState
-}
-
-func lexHex(l *gocalcLexer) stateFn {
-	if !l.acceptRun(l.alpha[0:22]) {
-		return lexNumberError
-	}
-
-	if isAlpha(l.peek()) {
-		return lexNumberError
-	}
-
-	l.emit(tokenInt)
-	return initialState
-}
-
-func isAlpha(r rune) bool {
-	return (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')
-}
-
-func lexNumberError(l *gocalcLexer) stateFn {
-	return l.errorf("bad number syntax: %q", l.input[l.start:l.pos])
-}
-
-func lexIdentifier(l *gocalcLexer) stateFn {
-	t := l.accept("true")
-	f := l.accept("false")
-	l.acceptRun(l.alpha)
-	if length := l.pos - l.start; length == 4 && t {
-		l.emit(tokenTrue)
-	} else if length == 5 && f {
-		l.emit(tokenFalse)
-	} else {
-		l.emit(tokenIdentifier)
-	}
-	return initialState
-}
-
-func (l *gocalcLexer) errorf(format string, args ...interface{}) stateFn {
-	l.tokens.push(&token{
-		tokenError,
-		fmt.Sprintf(format, args...),
-	})
-	return nil
-}
-
-func (l *gocalcLexer) peek() rune {
-	r := l.next()
-	l.backup()
-	return r
-}
-
-func (l *gocalcLexer) accept(valid string) bool {
-	if strings.IndexRune(valid, l.next()) >= 0 {
-		return true
-	}
-	l.backup()
-	return false
-}
-
-func (l *gocalcLexer) acceptRun(valid string) bool {
-	r := false
-	for strings.IndexRune(valid, l.next()) >= 0 {
-		r = true
-	}
-	l.backup()
-	return r
-}
-
-func (l *gocalcLexer) backup() {
-	l.pos -= l.width
-}
-
-func (l *gocalcLexer) ignore() {
-	l.start = l.pos
-}
-
-func (l *gocalcLexer) next() rune {
-	if l.pos >= len(l.input) {
-		l.width = 0
-		return eof
-	}
-	var r rune
-	r, l.width = utf8.DecodeRuneInString(l.input[l.pos:])
-	l.pos += l.width
-	return r
 }

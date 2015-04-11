@@ -4,9 +4,9 @@ package gocalc
 
 import "fmt"
 
-const _tokenType_name = "tokenErrortokenEOFtokenIdentifiertokenTruetokenFalsetokenInttokenFloattokenLeftParentokenRightParentokenCommatokenLogicalNottokenBitwiseNottokenBinarytokenStartokenSlashtokenPercenttokenPlustokenMinustokenLeftShifttokenRightShifttokenLessThantokenLessOrEqualtokenGreaterThantokenGreaterOrEqualtokenEqualtokenNotEqualtokenBitwiseAndtokenBitwiseXortokenBitwiseOrtokenLogicalAndtokenLogicalOr"
+const _tokenType_name = "tokenErrortokenWhitespacetokenEOFtokenIdentifiertokenTruetokenFalsetokenInttokenFloattokenLeftParentokenRightParentokenCommatokenLogicalNottokenBitwiseNottokenBinarytokenStartokenSlashtokenPercenttokenPlustokenMinustokenLeftShifttokenRightShifttokenLessThantokenLessOrEqualtokenGreaterThantokenGreaterOrEqualtokenEqualtokenNotEqualtokenBitwiseAndtokenBitwiseXortokenBitwiseOrtokenLogicalAndtokenLogicalOr"
 
-var _tokenType_index = [...]uint16{0, 10, 18, 33, 42, 52, 60, 70, 84, 99, 109, 124, 139, 150, 159, 169, 181, 190, 200, 214, 229, 242, 258, 274, 293, 303, 316, 331, 346, 360, 375, 389}
+var _tokenType_index = [...]uint16{0, 10, 25, 33, 48, 57, 67, 75, 85, 99, 114, 124, 139, 154, 165, 174, 184, 196, 205, 215, 229, 244, 257, 273, 289, 308, 318, 331, 346, 361, 375, 390, 404}
 
 func (i tokenType) String() string {
 	if i < 0 || i+1 >= tokenType(len(_tokenType_index)) {

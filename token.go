@@ -8,6 +8,7 @@ type tokenType int
 
 const (
 	tokenError tokenType = iota
+	tokenWhitespace
 	tokenEOF
 
 	tokenIdentifier
