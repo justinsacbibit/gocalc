@@ -303,6 +303,10 @@ func (e *evaluator) visitFuncExpr(f *funcExpr) {
 	if e.funcHandler != nil {
 		res, handled := e.funcHandler(f.function, e.mapLazy(f.args)...)
 		if handled {
+			switch r := res.(type) {
+			case int:
+				res = int64(r)
+			}
 			e.result = res
 			return
 		}
@@ -379,6 +383,11 @@ func (e *evaluator) visitIntExpr(i *intExpr) {
 func (e *evaluator) visitParamExpr(p *paramExpr) {
 	if e.paramResolver != nil {
 		if res := e.paramResolver(p.identifier); res != nil {
+			switch r := res.(type) {
+			case int:
+				res = int64(r)
+			}
+
 			e.result = res
 			return
 		}

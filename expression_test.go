@@ -278,3 +278,81 @@ func BenchmarkParamExpressionEvaluation(b *testing.B) {
 		e.Evaluate(r, nil)
 	}
 }
+
+func Example_simple() {
+	expression, _ := NewExpr("1 + 2")
+	// if err != nil {
+	// 	// Compilation of the expression failed
+	// 	fmt.Println(err)
+	// 	return
+	// }
+
+	result, _ := expression.Evaluate(nil, nil)
+	// if err != nil {
+	// 	// Evaluation of the expression failed
+	// 	fmt.Println(err)
+	// 	return
+	// }
+
+	fmt.Println(result)
+
+	// Output:
+	// 3
+}
+
+func Example_identifier() {
+	expression, _ := NewExpr("a * 2")
+
+	result, _ := expression.Evaluate(func(id string) interface{} {
+		switch id {
+		case "a":
+			return 2
+		}
+
+		return nil
+	}, nil)
+
+	fmt.Println(result)
+
+	// Output:
+	// 4
+}
+
+func Example_function() {
+	expression, _ := NewExpr("sub2(5)")
+
+	result, _ := expression.Evaluate(nil, func(fn string, args ...func() interface{}) (result interface{}, handled bool) {
+		switch fn {
+		case "sub2":
+			if len(args) != 1 {
+				panic(EvaluationError("sub2 requires 1 argument"))
+			}
+
+			arg := args[0]().(int64)
+			return arg - 2, true
+		}
+
+		return nil, false
+	})
+
+	fmt.Println(result)
+
+	// Output:
+	// 3
+}
+
+func Example_compileError() {
+	_, err := NewExpr("1 +")
+	if err != nil {
+		// A compilation error has occurred
+	}
+}
+
+func Example_evaluationError() {
+	expression, _ := NewExpr("a")
+
+	_, err := expression.Evaluate(nil, nil)
+	if err != nil {
+		// An evaluation error has occurred
+	}
+}

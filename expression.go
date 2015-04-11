@@ -18,7 +18,7 @@ func NewExpr(expr string) (*Expression, error) {
 	p := newParser(l)
 	t := p.parseExpr()
 	if t == nil {
-		return nil, CompileError(p.error)
+		return nil, compileError(p.error)
 	}
 
 	return &Expression{
@@ -55,8 +55,8 @@ func (e *Expression) Evaluate(p ParamResolver, f FuncHandler) (result interface{
 
 // CompileError represents a compilation error of an expression.
 //
-type CompileError string
+type compileError string
 
-func (c CompileError) Error() string {
+func (c compileError) Error() string {
 	return string(c)
 }
