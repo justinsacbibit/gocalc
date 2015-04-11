@@ -141,9 +141,20 @@ var tests = []expressionTest{
 	{true, "5 % 3", 2},
 
 	// Unary
-
-	// Negative
 	{true, "-1", -1},
+	{true, "!false", true},
+	{true, "~2", -3},
+	{false, "~2.0", nil},
+
+	// Function
+	{true, "abs(-2)", 2},
+	{true, "abs(-1.0)", 1.0},
+	{true, "abs(4)", 4},
+	{true, "abs(9.0)", 9.0},
+	{false, "g()", nil},
+
+	// Identifiers
+	{false, "d", nil},
 }
 
 var resolverTests = []resolverExpressionTest{
@@ -155,22 +166,26 @@ var resolverTests = []resolverExpressionTest{
 		return nil
 	}, nil},
 
-	{expressionTest{true, "abs(-2)", 2}, nil, nil},
-
-	{expressionTest{true, "abs(-3)", 3}, nil, func(f string, args ...func() interface{}) (interface{}, error, bool) {
-		return nil, nil, false
+	{expressionTest{true, "abs(-3)", 3}, nil, func(f string, args ...func() interface{}) (interface{}, bool) {
+		return nil, false
 	}},
 
-	{expressionTest{true, "add(1, 2)", 3}, nil, func(f string, args ...func() interface{}) (interface{}, error, bool) {
+	{expressionTest{false, "abs()", nil}, nil, nil},
+
+	{expressionTest{false, "f(2.0)", 3}, nil, func(f string, args ...func() interface{}) (interface{}, bool) {
+		return args[0]().(int), true
+	}},
+
+	{expressionTest{true, "add(1, 2)", 3}, nil, func(f string, args ...func() interface{}) (interface{}, bool) {
 		if f == "add" {
 			if l := len(args); l != 2 {
-				return nil, EvaluationError(fmt.Sprintf("add takes two param, got %d", l)), false
+				panic(EvaluationError(fmt.Sprintf("add takes two params, got %d", l)))
 			}
 
-			return args[0]().(int64) + args[1]().(int64), nil, true
+			return args[0]().(int64) + args[1]().(int64), true
 		}
 
-		return nil, nil, false
+		return nil, false
 	}},
 }
 

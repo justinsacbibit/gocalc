@@ -33,8 +33,9 @@ type ParamResolver func(string) (value interface{})
 
 // FuncHandler handles evaluates a function within an Expression, given
 // parameters (which are wrapped in a function for lazy evaluation).
+// FuncHandlers may make calls to panic() with an EvaluationError.
 //
-type FuncHandler func(string, ...func() interface{}) (result interface{}, err error, handled bool)
+type FuncHandler func(string, ...func() interface{}) (result interface{}, handled bool)
 
 // Evaluate evaluates an Expression. If any parameters or function are found,
 // Evaluate will call the appropriate resolver. The evaluation result is

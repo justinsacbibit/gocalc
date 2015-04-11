@@ -22,10 +22,10 @@ func (e *evaluator) evaluate(t expr) interface{} {
 	defer func() {
 		if r := recover(); r != nil {
 			switch err := r.(type) {
-			case runtime.TypeAssertionError:
+			case *runtime.TypeAssertionError:
 				panic(EvaluationError(err.Error()))
 			default:
-				panic(r)
+				panic(err)
 			}
 		}
 	}()
@@ -301,10 +301,8 @@ func (e *evaluator) mapLazy(args []expr) []func() interface{} {
 
 func (e *evaluator) visitFuncExpr(f *funcExpr) {
 	if e.funcHandler != nil {
-		res, err, handled := e.funcHandler(f.function, e.mapLazy(f.args)...)
-		if err != nil {
-			panic(err)
-		} else if handled {
+		res, handled := e.funcHandler(f.function, e.mapLazy(f.args)...)
+		if handled {
 			e.result = res
 			return
 		}

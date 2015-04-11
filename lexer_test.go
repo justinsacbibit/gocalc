@@ -17,6 +17,7 @@ type lexerMultipleTokenTest struct {
 }
 
 var lexerSingleTokenTests = []lexerSingleTokenTest{
+	{true, "", tokenEOF, ""},
 	{true, "1", tokenInt, "1"},
 	{true, "111", tokenInt, "111"},
 	{true, "123456789", tokenInt, "123456789"},
