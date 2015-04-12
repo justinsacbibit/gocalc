@@ -24,8 +24,10 @@ func (e *evaluator) evaluate(t expr) interface{} {
 			switch err := r.(type) {
 			case *runtime.TypeAssertionError:
 				panic(EvaluationError(err.Error()))
-			default:
+			case EvaluationError:
 				panic(err)
+			default:
+				panic(EvaluationError(fmt.Sprintf("%s", err)))
 			}
 		}
 	}()
