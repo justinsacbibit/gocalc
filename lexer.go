@@ -66,7 +66,6 @@ const stateCount uint8 = 44
 const maxTransitionCount uint16 = 256
 
 var trans = [stateCount][maxTransitionCount]state{}
-var inited = false
 
 var stateTokens = [...]tokenType{
 	tokenError,          // stErr
@@ -121,9 +120,7 @@ func setTrans(current state, transition string, next state) {
 	}
 }
 
-func initTransitions() {
-	inited = true
-
+func init() {
 	setTrans(stStart, whitespace, stWhitespace)
 	setTrans(stWhitespace, whitespace, stWhitespace)
 
@@ -198,10 +195,6 @@ func initTransitions() {
 }
 
 func newLexer(input string) lexer {
-	if !inited {
-		initTransitions()
-	}
-
 	return &gocalcLexer{
 		input:  input,
 		tokens: queue{},
