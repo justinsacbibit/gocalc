@@ -1,7 +1,5 @@
 package gocalc
 
-import "fmt"
-
 //go:generate stringer -type=tokenType
 
 type tokenType int
@@ -60,6 +58,8 @@ const (
 type token struct {
 	typ tokenType
 	val string
+	pos int // starting position of token
+	end int // ending position of token
 }
 
 func (t token) String() string {
@@ -67,5 +67,5 @@ func (t token) String() string {
 	case tokenEOF:
 		return "EOF"
 	}
-	return fmt.Sprintf("%v", t.val)
+	return t.val
 }

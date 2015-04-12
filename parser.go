@@ -61,8 +61,11 @@ func (p *parser) parsePrimary() expr {
 	case tokenIdentifier:
 		// IDENTIFIER | IDENTIFIER '(' args ')'
 		return p.parseIdentifier(token)
+	case tokenError:
+		p.error = fmt.Sprintf("Lexical error at %d: \"%s\"", token.pos, token.val)
+		return nil
 	default:
-		p.error = fmt.Sprintf("Expected primary, got \"%s\"", token)
+		p.error = fmt.Sprintf("Expected primary at %d, got \"%s\"", token.pos, token)
 		return nil
 	}
 }

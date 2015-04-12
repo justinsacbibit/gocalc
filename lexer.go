@@ -218,6 +218,9 @@ func (l *gocalcLexer) push() {
 		if nextState == stErr {
 			curTokenType := stateTokens[l.state]
 			if curTokenType == tokenError {
+				for l.pos < len(l.input) && trans[l.state][l.input[l.pos]] == stErr {
+					l.pos++
+				}
 				l.emit(tokenError)
 				return
 			}
@@ -267,6 +270,8 @@ func (l *gocalcLexer) emit(t tokenType) {
 	l.tokens.push(&token{
 		typ: t,
 		val: l.input[l.start:l.pos],
+		pos: l.start,
+		end: l.pos,
 	})
 	l.start = l.pos
 }
