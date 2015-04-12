@@ -281,18 +281,8 @@ func BenchmarkParamExpressionEvaluation(b *testing.B) {
 
 func Example_simple() {
 	expression, _ := NewExpr("1 + 2")
-	// if err != nil {
-	// 	// Compilation of the expression failed
-	// 	fmt.Println(err)
-	// 	return
-	// }
 
 	result, _ := expression.Evaluate(nil, nil)
-	// if err != nil {
-	// 	// Evaluation of the expression failed
-	// 	fmt.Println(err)
-	// 	return
-	// }
 
 	fmt.Println(result)
 
@@ -355,4 +345,15 @@ func Example_evaluationError() {
 	if err != nil {
 		// An evaluation error has occurred
 	}
+}
+
+func Example_float() {
+	expression, _ := NewExpr("3.25 * 10")
+
+	result, _ := expression.Evaluate(nil, nil)
+
+	fmt.Println(result)
+
+	// Output:
+	// 32.5
 }
