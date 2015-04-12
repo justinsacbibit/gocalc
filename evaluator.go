@@ -1,9 +1,6 @@
 package gocalc
 
-import (
-	"fmt"
-	"runtime"
-)
+import "fmt"
 
 type evaluator struct {
 	result        interface{}
@@ -19,19 +16,6 @@ func newEvaluator(p ParamResolver, f FuncHandler) *evaluator {
 }
 
 func (e *evaluator) evaluate(t expr) interface{} {
-	defer func() {
-		if r := recover(); r != nil {
-			switch err := r.(type) {
-			case *runtime.TypeAssertionError:
-				panic(EvaluationError(err.Error()))
-			case EvaluationError:
-				panic(err)
-			default:
-				panic(EvaluationError(fmt.Sprintf("%s", err)))
-			}
-		}
-	}()
-
 	t.accept(e)
 	return e.result
 }

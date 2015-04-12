@@ -1,5 +1,7 @@
 package gocalc
 
+import "fmt"
+
 // An Expression is used to compile and evaluate a string representation of a
 // mathematical expression. Multiple goroutines can use an Expression, as
 // parameters and functions are not stored within the Expression, and are
@@ -44,8 +46,12 @@ type FuncHandler func(string, ...func() interface{}) (result interface{}, handle
 func (e *Expression) Evaluate(p ParamResolver, f FuncHandler) (result interface{}, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			result = nil
-			err = r.(EvaluationError)
+			switch er := r.(type) {
+			case error:
+				err = er
+			default:
+				err = EvaluationError(fmt.Sprintf("An error has occurred: %s", er))
+			}
 		}
 	}()
 
